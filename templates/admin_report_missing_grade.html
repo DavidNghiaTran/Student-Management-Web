@@ -1,0 +1,59 @@
+{% extends "_layout.html" %}
+
+{% block title %}Báo cáo: SV chưa thi{% endblock %}
+
+{% block content %}
+    <p><a href="{{ url_for('admin_reports_index') }}">&laquo; Quay lại Danh sách Báo cáo</a></p>
+
+    <h2>Báo cáo 2: Liệt kê sinh viên chưa thi môn X</h2>
+    
+    
+    <form method="GET" action="{{ url_for('admin_report_missing_grade') }}">
+        <p>
+            <label for="ma_mh">Chọn Môn học:</label>
+            <select name="ma_mh" id="ma_mh" required onchange="this.form.submit()" style="width: 320px;">
+                <option value="">-- Vui lòng chọn --</option>
+                {% for mh in danh_sach_mon_hoc %}
+                    <option value="{{ mh.ma_mh }}" {% if selected_mon_hoc and selected_mon_hoc.ma_mh == mh.ma_mh %}selected{% endif %}>
+                        {{ mh.ten_mh }} ({{ mh.ma_mh }})
+                    </option>
+                {% endfor %}
+            </select>
+        </p>
+    </form>
+
+    <hr>
+    
+    {% if selected_mon_hoc %}
+        <h3>Danh sách sinh viên CHƯA THI môn: {{ selected_mon_hoc.ten_mh }}</h3>
+        
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Mã SV</th>
+                    <th>Họ tên</th>
+                    <th>Lớp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sv in results %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ sv.ma_sv }}</td>
+                    <td>{{ sv.ho_ten }}</td>
+                    <td>{{ sv.lop }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4">Tất cả sinh viên đều đã có dữ liệu điểm cho môn này (hoặc không có sinh viên nào).</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Vui lòng chọn một môn học để xem báo cáo.</p>
+    {% endif %}
+    
+{% endblock %}

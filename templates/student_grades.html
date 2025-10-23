@@ -1,0 +1,36 @@
+{% extends "_layout.html" %}
+
+{% block title %}Bảng điểm{% endblock %}
+
+{% block content %}
+    <h2>Bảng điểm cá nhân</h2>
+    
+    <h3>Điểm trung bình (GPA Thang 10): {{ "%.2f"|format(gpa) }}</h3>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Mã môn học</th>
+                <th>Tên môn học</th>
+                <th>Số tín chỉ</th>
+                <th>Điểm thi (10)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in results %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ row.ma_mh }}</td>
+                <td>{{ row.ten_mh }}</td>
+                <td>{{ row.so_tin_chi }}</td>
+                <td>{{ row.diem_thi }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">Bạn chưa có điểm thi.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "_layout.html" %}
+
+{% block title %}Gửi Thông báo Lớp{% endblock %}
+
+{% block content %}
+    <h2>Gửi Thông báo mới</h2>
+    <p>Soạn và gửi thông báo đến một lớp học cụ thể.</p>
+
+    <form method="POST" action="{{ url_for('admin_send_notification') }}">
+        <p>
+            <label for="lop_nhan">Gửi đến Lớp:</label>
+            <select name="lop_nhan" id="lop_nhan" required style="width: 320px;">
+                <option value="">-- Vui lòng chọn Lớp --</option>
+                {% for lop in danh_sach_lop %}
+                    <option value="{{ lop }}">{{ lop }}</option>
+                {% endfor %}
+            </select>
+        </p>
+        <p>
+            <label for="tieu_de">Tiêu đề:</label>
+            <input type="text" name="tieu_de" id="tieu_de" required style="width: 100%;">
+        </p>
+        <p>
+            <label for="noi_dung">Nội dung:</label>
+            <textarea name="noi_dung" id="noi_dung" rows="8" required style="width: 100%; padding: 10px; font-family: Arial, sans-serif; font-size: 14px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+        </p>
+        <p>
+            <input type="submit" value="Gửi Thông báo">
+        </p>
+    </form>
+{% endblock %}

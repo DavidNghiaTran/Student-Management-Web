@@ -1,0 +1,46 @@
+{% extends "_layout.html" %}
+
+{% block title %}Trang chủ Sinh viên{% endblock %}
+
+{% block content %}
+    {% if sinh_vien %}
+        <h2>Chào mừng, {{ sinh_vien.ho_ten }}!</h2>
+        <p>Đây là trang quản lý thông tin của bạn. Lớp: <strong>{{ sinh_vien.lop }}</strong></p>
+    {% else %}
+        <h2>Chào mừng, {{ current_user.username }}!</h2>
+        <p style="color:red;">(Tài khoản của bạn chưa được liên kết với hồ sơ sinh viên. Vui lòng liên hệ giáo vụ.)</p>
+    {% endif %}
+    
+    <hr style="margin: 25px 0;">
+    
+    <h3>Thông báo mới nhất cho Lớp {{ sinh_vien.lop }}</h3>
+    
+    <style>
+        .notification-box {
+            border: 1px solid #ddd;
+            border-left: 5px solid #0275d8;
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .notification-box h4 { margin: 0 0 5px 0; }
+        .notification-box small { color: #555; }
+        .notification-box p { margin: 10px 0 0 0; }
+    </style>
+    
+    {% if notifications %}
+        {% for msg in notifications %}
+            <div class="notification-box">
+                <h4>{{ msg.tieu_de }}</h4>
+                <small>
+                    Từ: <strong>{{ msg.ma_gv }}</strong> | 
+                    Ngày: {{ msg.ngay_gui.strftime('%d-%m-%Y %H:%M') }}
+                </small>
+                <p>{{ msg.noi_dung | safe }}</p> </div>
+        {% endfor %}
+    {% else %}
+        <p>Hiện không có thông báo nào cho lớp của bạn.</p>
+    {% endif %}
+    
+{% endblock %}

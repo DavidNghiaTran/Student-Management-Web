@@ -1,0 +1,28 @@
+{% extends "_layout.html" %}
+
+{% block title %}Cập nhật Môn học{% endblock %}
+
+{% block content %}
+    <h2>Cập nhật Môn học: {{ course.ten_mh }}</h2>
+    <p>Lưu ý: Bạn không thể sửa Mã Môn học. </p>
+
+    <form method="POST" action="{{ url_for('admin_edit_course', ma_mh=course.ma_mh) }}">
+        <p>
+            <label>Mã Môn học:</label>
+            <input type="text" name="ma_mh" value="{{ course.ma_mh }}" disabled>
+        </p>
+        <p>
+            <label>Tên Môn học:</label>
+            <input type="text" name="ten_mh" value="{{ course.ten_mh }}" required>
+        </p>
+        <p>
+            <label>Số tín chỉ:</label>
+            <input type="number" name="so_tin_chi" value="{{ course.so_tin_chi }}" min="1" required>
+        </p>
+        <p>
+            <input type="submit" value="Lưu thay đổi">
+        </p>
+    </form>
+    
+    <a href="{{ url_for('admin_manage_courses') }}">Quay lại danh sách</a>
+{% endblock %}

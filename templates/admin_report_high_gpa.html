@@ -1,0 +1,37 @@
+{% extends "_layout.html" %}
+
+{% block title %}Báo cáo: GPA > {{ threshold }}{% endblock %}
+
+{% block content %}
+    <p><a href="{{ url_for('admin_reports_index') }}">&laquo; Quay lại Danh sách Báo cáo</a></p>
+    
+    <h2>Báo cáo 1: Danh sách sinh viên có GPA (thang 10) > {{ threshold }}</h2>
+    
+
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Mã SV</th>
+                <th>Họ tên</th>
+                <th>Lớp</th>
+                <th>GPA (Thang 10)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in results %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ row.ma_sv }}</td>
+                <td>{{ row.ho_ten }}</td>
+                <td>{{ row.lop }}</td>
+                <td><strong>{{ "%.2f"|format(row.gpa) }}</strong></td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">Không tìm thấy sinh viên nào có GPA > {{ threshold }}.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

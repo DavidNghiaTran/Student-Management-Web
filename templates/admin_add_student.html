@@ -1,0 +1,34 @@
+{% extends "_layout.html" %}
+
+{% block title %}Thêm Sinh viên{% endblock %}
+
+{% block content %}
+    <h2>Thêm Sinh viên mới</h2>
+    <p>Lưu ý: Thêm sinh viên tại đây sẽ tự động tạo tài khoản đăng nhập cho sinh viên đó.</p> 
+
+    <form method="POST" action="{{ url_for('admin_add_student') }}">
+        <p>
+            <label>Mã Sinh viên (Sẽ dùng làm Tên đăng nhập):</label>
+            <input type="text" name="ma_sv" required>
+        </p>
+        <p>
+            <label>Họ tên:</label>
+            <input type="text" name="ho_ten" required>
+        </p>
+        <p>
+            <label>Ngày sinh (YYYY-MM-DD):</label>
+            <input type="date" name="ngay_sinh" required>
+        </p>
+        <p>
+            <label>Lớp:</label>
+            <input type="text" name="lop">
+        </p>
+        <p>
+            <label>Khoa:</label>
+            <input type="text" name="khoa">
+        </p>
+        <p>
+            <input type="submit" value="Thêm mới">
+        </p>
+    </form>
+{% endblock %}

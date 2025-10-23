@@ -1,0 +1,32 @@
+{% extends "_layout.html" %}
+
+{% block title %}Quản lý Điểm thi{% endblock %}
+
+{% block content %}
+    <h2>Quản lý Điểm thi - Bước 1: Chọn Lớp và Môn học</h2>
+    <p>Vui lòng chọn Lớp và Môn học để bắt đầu nhập điểm. </p>
+
+    <form method="POST" action="{{ url_for('admin_manage_grades') }}">
+        <p>
+            <label for="lop">Chọn Lớp:</label>
+            <select name="lop" id="lop" required style="padding: 10px; width: 320px;">
+                <option value="">-- Vui lòng chọn --</option>
+                {% for lop in danh_sach_lop %}
+                    <option value="{{ lop }}">{{ lop }}</option>
+                {% endfor %}
+            </select>
+        </p>
+        <p>
+            <label for="ma_mh">Chọn Môn học:</label>
+            <select name="ma_mh" id="ma_mh" required style="padding: 10px; width: 320px;">
+                <option value="">-- Vui lòng chọn --</option>
+                {% for mh in danh_sach_mon_hoc %}
+                    <option value="{{ mh.ma_mh }}">{{ mh.ten_mh }} ({{ mh.ma_mh }})</option>
+                {% endfor %}
+            </select>
+        </p>
+        <p>
+            <input type="submit" value="Hiển thị Danh sách Nhập điểm">
+        </p>
+    </form>
+{% endblock %}

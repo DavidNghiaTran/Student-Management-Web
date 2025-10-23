@@ -1,0 +1,36 @@
+{% extends "_layout.html" %}
+
+{% block title %}Cập nhật Sinh viên{% endblock %}
+
+{% block content %}
+    <h2>Cập nhật Sinh viên: {{ sv.ho_ten }} ({{ sv.ma_sv }})</h2>
+    <p>Lưu ý: Bạn không thể sửa Mã Sinh viên. </p>
+
+    <form method="POST" action="{{ url_for('admin_edit_student', ma_sv=sv.ma_sv) }}">
+        <p>
+            <label>Mã Sinh viên:</label>
+            <input type="text" name="ma_sv" value="{{ sv.ma_sv }}" disabled>
+        </p>
+        <p>
+            <label>Họ tên:</label>
+            <input type="text" name="ho_ten" value="{{ sv.ho_ten }}" required>
+        </p>
+        <p>
+            <label>Ngày sinh (YYYY-MM-DD):</label>
+            <input type="date" name="ngay_sinh" value="{{ sv.ngay_sinh.strftime('%Y-%m-%d') }}" required>
+        </p>
+        <p>
+            <label>Lớp:</label>
+            <input type="text" name="lop" value="{{ sv.lop }}">
+        </p>
+        <p>
+            <label>Khoa:</label>
+            <input type="text" name="khoa" value="{{ sv.khoa }}">
+        </p>
+        <p>
+            <input type="submit" value="Lưu thay đổi">
+        </p>
+    </form>
+    
+    <a href="{{ url_for('admin_manage_students') }}">Quay lại danh sách</a>
+{% endblock %}

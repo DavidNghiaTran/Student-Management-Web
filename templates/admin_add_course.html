@@ -1,0 +1,27 @@
+{% extends "_layout.html" %}
+
+{% block title %}Thêm Môn học{% endblock %}
+
+{% block content %}
+    <h2>Thêm Môn học mới</h2>
+
+    <form method="POST" action="{{ url_for('admin_add_course') }}">
+        <p>
+            <label>Mã Môn học:</label>
+            <input type="text" name="ma_mh" required>
+        </p>
+        <p>
+            <label>Tên Môn học:</label>
+            <input type="text" name="ten_mh" required>
+        </p>
+        <p>
+            <label>Số tín chỉ:</label>
+            <input type="number" name="so_tin_chi" min="1" required>
+        </p>
+        <p>
+            <input type="submit" value="Thêm mới">
+        </p>
+    </form>
+    
+    <a href="{{ url_for('admin_manage_courses') }}">Quay lại danh sách</a>
+{% endblock %}

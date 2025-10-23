@@ -1,0 +1,39 @@
+{% extends "_layout.html" %}
+
+{% block title %}Báo cáo: GPA theo Lớp{% endblock %}
+
+{% block content %}
+    <p><a href="{{ url_for('admin_reports_index') }}">&laquo; Quay lại Danh sách Báo cáo</a></p>
+
+    <h2>Báo cáo 3: Thống kê điểm trung bình (GPA) Lớp</h2>
+    
+    
+    <form method="GET" action="{{ url_for('admin_report_class_gpa') }}">
+        <p>
+            <label for="lop">Chọn Lớp:</label>
+            <select name="lop" id="lop" required onchange="this.form.submit()" style="width: 320px;">
+                <option value="">-- Vui lòng chọn --</option>
+                {% for lop in danh_sach_lop %}
+                    <option value="{{ lop }}" {% if selected_lop == lop %}selected{% endif %}>
+                        {{ lop }}
+                    </option>
+                {% endfor %}
+            </select>
+        </p>
+    </form>
+    
+    <hr>
+    
+    {% if selected_lop %}
+        <h3>Kết quả Thống kê cho Lớp: {{ selected_lop }}</h3>
+        
+        
+        <h2 style="color: #0275d8;">
+            GPA Trung bình chung (Thang 10): {{ "%.2f"|format(lop_gpa) }}
+        </h2>
+        
+    {% else %}
+        <p>Vui lòng chọn một lớp để xem thống kê.</p>
+    {% endif %}
+    
+{% endblock %}

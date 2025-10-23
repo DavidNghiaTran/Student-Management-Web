@@ -1,0 +1,40 @@
+{% extends "_layout.html" %}
+
+{% block title %}Quản lý Sinh viên{% endblock %}
+
+{% block content %}
+    <h2>Quản lý Sinh viên</h2>
+    <a href="{{ url_for('admin_add_student') }}">Thêm Sinh viên mới</a>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Mã SV</th>
+                <th>Họ tên</th>
+                <th>Ngày sinh</th>
+                <th>Lớp</th>
+                <th>Khoa</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sv in students %}
+            <tr>
+                <td>{{ sv.ma_sv }}</td>
+                <td>{{ sv.ho_ten }}</td>
+                <td>{{ sv.ngay_sinh }}</td>
+                <td>{{ sv.lop }}</td>
+                <td>{{ sv.khoa }}</td>
+                <td>
+                    <a href="#">Sửa</a> | 
+                    <a href="#" onclick="return confirm('Bạn có chắc muốn xóa?');">Xóa</a>
+                    </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">Chưa có sinh viên nào.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

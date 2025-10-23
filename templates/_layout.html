@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>{% block title %}Hệ thống QLSV{% endblock %}</title>
+    
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            background-color: #f9f9f9;
+        }
+        nav { 
+            background-color: #ffffff; 
+            padding: 10px 20px; 
+            margin-bottom: 20px; 
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap; /* Cho phép menu xuống dòng trên di động */
+        }
+        nav a { 
+            margin-right: 15px; 
+            text-decoration: none; 
+            color: #333; 
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-bottom: 5px; /* Thêm khoảng cách nếu xuống dòng */
+            margin-top: 5px;
+        }
+        nav a:hover {
+            background-color: #f0f0f0;
+        }
+        nav a.logout-link {
+            margin-left: auto; /* Đẩy link Đăng xuất về bên phải */
+            color: #d9534f;
+        }
+        nav a.logout-link:hover {
+            background-color: #f8d7da;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto;
+            padding: 0 20px;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 70vh;
+        }
+        
+        /* [cite: 22] CSS cho các thông báo (flash messages) */
+        .flash { padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid; }
+        .flash.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .flash.danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .flash.info { background-color: #cce5ff; color: #004085; border-color: #b8daff; }
+        
+        table { border-collapse: collapse; width: 100%; margin-top: 20px;}
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        
+        /* Cải thiện style cho form (đáp ứng tốt hơn) */
+        input[type="text"], input[type="password"], input[type="date"], input[type="number"], 
+        select, textarea, input[type="submit"], input[type="button"], a.button {
+            padding: 10px;
+            margin: 5px 0 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 300px;
+            max-width: 100%; /* Đảm bảo không tràn viền trên di động */
+            box-sizing: border-box; 
+            font-size: 14px;
+            font-family: inherit;
+        }
+        textarea {
+            width: 100%;
+            rows: 8;
+        }
+        select {
+             width: 320px;
+             max-width: 100%;
+        }
+        input[type="submit"], input[type="button"], a.button {
+            background-color: #0275d8;
+            color: white;
+            cursor: pointer;
+            border: none;
+            width: auto;
+            font-weight: 500;
+        }
+        input[type="submit"]:hover, input[type="button"]:hover, a.button:hover {
+            background-color: #025aa5;
+        }
+        
+    </style>
+</head>
+<body>
+    
+    <nav>
+        {% if current_user.is_authenticated %}
+            
+            {% if current_user.vai_tro.value == 'SINHVIEN' %}
+                <a href="{{ url_for('student_dashboard') }}">Trang chủ SV</a> [cite: 60]
+                <a href="{{ url_for('student_profile') }}">Thông tin cá nhân</a> [cite: 62]
+                <a href="{{ url_for('student_grades') }}">Xem điểm</a> [cite: 65]
+            
+            {% elif current_user.vai_tro.value == 'GIAOVIEN' %}
+                <a href="{{ url_for('admin_dashboard') }}">Trang chủ GV</a> [cite: 77]
+                <a href="{{ url_for('admin_manage_students') }}">Quản lý Sinh viên</a> 
+                <a href="{{ url_for('admin_manage_courses') }}">Quản lý Môn học</a> 
+                <a href="{{ url_for('admin_manage_grades') }}" style="color: #0275d8; font-weight: bold;">Quản lý Điểm</a> 
+                <a href="{{ url_for('admin_reports_index') }}" style="color: #5cb85c; font-weight: bold;">Báo cáo & Thống kê</a> 
+                <a href="{{ url_for('admin_send_notification') }}" style="color: #f0ad4e; font-weight: bold;">Gửi Thông báo</a>
+
+            {% endif %}
+            
+            <a href="{{ url_for('logout') }}" class="logout-link">Đăng xuất ({{ current_user.username }})</a>
+        
+        {% else %}
+            <a href="{{ url_for('login') }}">Đăng nhập</a>
+        {% endif %}
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
