@@ -1,0 +1,35 @@
+{% extends "_layout.html" %}
+
+{% block title %}Nhập Sinh viên từ Excel{% endblock %}
+
+{% block content %}
+    <h2>Nhập Sinh viên hàng loạt từ File Excel</h2>
+    <p>Chức năng này cho phép bạn tạo hàng loạt tài khoản và hồ sơ sinh viên.</p>
+
+    <div style="background: #fdf8e2; border: 1px solid #f0ad4e; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+        <strong>Yêu cầu file Excel:</strong>
+        <ul style="margin-top: 10px;">
+            <li>File phải có định dạng `.xlsx` hoặc `.xls`.</li>
+            <li>
+                <strong>Các cột bắt buộc:</strong>
+                <code>ma_sinh_vien</code>, <code>ten_sinh_vien</code>, <code>password</code>, <code>role</code> (giá trị phải là "SINHVIEN").
+            </li>
+            <li>
+                <strong>Các cột tùy chọn:</strong>
+                <code>email</code>, <code>location</code>, <code>lop</code>, <code>khoa</code>, <code>ngay_sinh</code> (định dạng YYYY-MM-DD).
+            </li>
+        </ul>
+        <p>Hệ thống sẽ bỏ qua các sinh viên có <code>ma_sinh_vien</code> đã tồn tại.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin_import_students') }}" enctype="multipart/form-data">
+        <p>
+            <label for="file">Chọn File Excel:</label><br>
+            <input type="file" name="file" id="file" accept=".xls,.xlsx" required 
+                   style="border: 1px solid #ccc; padding: 10px; width: 100%;">
+        </p>
+        <p>
+            <input type="submit" value="Tải lên và Xử lý" style="background: #5cb85c; color: white;">
+        </p>
+    </form>
+{% endblock %}

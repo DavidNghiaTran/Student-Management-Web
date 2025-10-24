@@ -3,18 +3,33 @@
 {% block title %}Đăng nhập{% endblock %}
 
 {% block content %}
-    <h2>Đăng nhập hệ thống</h2>
-    <form method="POST" action="{{ url_for('login') }}">
-        <p>
-            <label>Tên đăng nhập:</label>
-            <input type="text" name="username" required>
-        </p>
-        <p>
-            <label>Mật khẩu:</label>
-            <input type="password" name="password" required>
-        </p>
-        <p>
-            <input type="submit" value="Đăng nhập">
-        </p>
-    </form>
+
+    <div class="card">
+        <div class="card-header">Đăng nhập hệ thống</div>
+        <div class="card-body">
+            <p>Chào mừng bạn đến với Hệ thống Quản lý Đào tạo. Vui lòng đăng nhập.</p>
+            <br>
+            <form method="POST" action="{{ url_for('login') }}">
+                <div>
+                    <label for="username">Tên đăng nhập (Mã SV / Mã GV):</label>
+                    <input type="text" name="username" id="username" required>
+                </div>
+                <div>
+                    <label for="password">Mật khẩu:</label>
+                    <input type="password" name="password" id="password" required>
+                </div>
+                <div>
+                    <input type="submit" value="Đăng nhập">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Thông báo chung</div>
+        <div class="card-body">
+            <p>Mở hệ thống đăng ký học, thời khóa biểu...</p>
+        </div>
+    </div>
+
 {% endblock %}

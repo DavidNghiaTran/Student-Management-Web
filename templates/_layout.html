@@ -3,138 +3,370 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <title>{% block title %}Hệ thống QLSV{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            background-color: #f9f9f9;
+        :root {
+            --primary-color: #b71c1c; /* Màu đỏ chủ đạo (theo yêu cầu) */
+            --light-gray: #f4f6f9;     /* Màu nền chính */
+            --border-color: #e0e0e0;   /* Màu viền */
+            --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        nav { 
-            background-color: #ffffff; 
-            padding: 10px 20px; 
-            margin-bottom: 20px; 
-            border-bottom: 1px solid #ddd;
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-gray);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* === 1. HEADER (Thanh đỏ) === */
+        .app-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0 25px;
             display: flex;
             align-items: center;
-            flex-wrap: wrap; /* Cho phép menu xuống dòng trên di động */
+            height: 55px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        nav a { 
-            margin-right: 15px; 
-            text-decoration: none; 
-            color: #333; 
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-logo img {
+            height: 35px; /* Đặt logo vào đây */
+        }
+        .header-logo-text {
+            font-size: 1.25rem;
             font-weight: 500;
+            color: white;
+            text-decoration: none;
+        }
+        .header-nav {
+            margin-left: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        .header-nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             padding: 8px 12px;
-            border-radius: 5px;
-            margin-bottom: 5px; /* Thêm khoảng cách nếu xuống dòng */
-            margin-top: 5px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
         }
-        nav a:hover {
-            background-color: #f0f0f0;
+        .header-nav a:hover, .header-nav a.active {
+            background-color: rgba(0,0,0,0.15);
         }
-        nav a.logout-link {
-            margin-left: auto; /* Đẩy link Đăng xuất về bên phải */
-            color: #d9534f;
-        }
-        nav a.logout-link:hover {
-            background-color: #f8d7da;
-        }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto;
+
+        /* === 2. THÂN TRANG (Layout 2 cột) === */
+        .app-container {
+            display: flex;
+            flex: 1; /* Quan trọng: để đẩy footer xuống */
+            width: 100%;
+            max-width: 1400px;
+            margin: 20px auto;
+            gap: 20px;
             padding: 0 20px;
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            min-height: 70vh;
         }
+
+        /* === 3. NỘI DUNG CHÍNH (Bên trái) === */
+        .main-content {
+            flex: 3;
+            min-width: 0; /* Ngăn nội dung bị co lại bất thường */
+        }
+
+        /* === 4. SIDEBAR (Bên phải) === */
+        .sidebar-right {
+            flex: 1;
+            min-width: 300px; /* Đảm bảo sidebar không quá hẹp */
+        }
+
+        /* === 5. FOOTER (Thanh đỏ) === */
+        .app-footer {
+            background-color: var(--primary-color);
+            color: #eee;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            margin-top: auto; /* Quan trọng: để đẩy footer xuống */
+        }
+        .footer-stats {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #f0f0f0;
+        }
+        .footer-stats span i {
+            margin-right: 5px;
+        }
+
+        /* === CÁC THÀNH PHẦN GIAO DIỆN === */
+
         
-        /* [cite: 22] CSS cho các thông báo (flash messages) */
-        .flash { padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid; }
+        /* Bảng (Table) */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 1px solid var(--border-color); /* Thêm viền bao ngoài bảng */
+        }
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            border: 1px solid var(--border-color); /* <-- THÊM DÒNG NÀY ĐỂ TẠO VIỀN CHO Ô */
+            text-align: left;
+        }
+        .data-table thead th {
+            background-color: #f9f9f9; /* Header xám nhạt */
+            font-weight: 500;
+        }
+
+        /* Thẻ (Card) */
+        .card {
+            background: #fff;
+            border-radius: 8px; /* Bo góc nhẹ */
+            box-shadow: var(--card-shadow); /* Bóng đổ mềm */
+            margin-bottom: 20px;
+            overflow: hidden; /* Giữ .card-header đẹp */
+        }
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #111;
+        }
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Nhóm Sidebar (Giống QLĐT) */
+        .sidebar-group {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .sidebar-header {
+            background-color: #f7f7f7;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--primary-color);
+            padding: 12px 15px;
+            margin: 0;
+            font-size: 0.9em;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .sidebar-content {
+            padding: 15px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .sidebar-content strong {
+            display: inline-block;
+            min-width: 80px;
+            color: #555;
+        }
+        /* Menu tính năng (Sidebar) */
+        .sidebar-nav a {
+            display: block;
+            text-decoration: none;
+            color: #333;
+            padding: 13px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.95rem;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-nav a i {
+            color: #555;
+            width: 16px;
+        }
+        .sidebar-nav a:hover {
+            background-color: #f9f9f9;
+        }
+        .sidebar-nav a:last-child {
+            border-bottom: none;
+        }
+        .sidebar-nav a.logout-link {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        /* Thông báo (Flash) */
+        .flash {
+            padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid;
+        }
         .flash.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
         .flash.danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
-        .flash.info { background-color: #cce5ff; color: #004085; border-color: #b8daff; }
-        
-        table { border-collapse: collapse; width: 100%; margin-top: 20px;}
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        
-        /* Cải thiện style cho form (đáp ứng tốt hơn) */
-        input[type="text"], input[type="password"], input[type="date"], input[type="number"], 
-        select, textarea, input[type="submit"], input[type="button"], a.button {
-            padding: 10px;
-            margin: 5px 0 10px 0;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            width: 300px;
-            max-width: 100%; /* Đảm bảo không tràn viền trên di động */
-            box-sizing: border-box; 
-            font-size: 14px;
-            font-family: inherit;
+
+        /* Form (Căn bản) */
+        form label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
         }
-        textarea {
+        form input[type="text"], form input[type="password"] {
             width: 100%;
-            rows: 8;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 15px;
         }
-        select {
-             width: 320px;
-             max-width: 100%;
-        }
-        input[type="submit"], input[type="button"], a.button {
-            background-color: #0275d8;
+        form input[type="submit"] {
+            background: var(--primary-color);
             color: white;
-            cursor: pointer;
             border: none;
-            width: auto;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
             font-weight: 500;
         }
-        input[type="submit"]:hover, input[type="button"]:hover, a.button:hover {
-            background-color: #025aa5;
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .app-container {
+                flex-direction: column; /* Xếp chồng 2 cột */
+            }
+            .sidebar-right {
+                min-width: 100%;
+            }
         }
-        
     </style>
 </head>
 <body>
-    
-    <nav>
-        {% if current_user.is_authenticated %}
+
+    <header class="app-header">
+        <div class="header-logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+            <a href="{{ url_for('home') }}" class="header-logo-text">Quản lý Đào tạo</a>
+        </div>
+        <nav class="header-nav">
+            <a href="{{ url_for('home') }}" class="active">
+                <i class="fa-solid fa-house"></i>
+                <span>Trang chủ</span>
+            </a>
+            </nav>
+    </header>
+
+    <div class="app-container">
+
+        <main class="main-content">
             
-            {% if current_user.vai_tro.value == 'SINHVIEN' %}
-                <a href="{{ url_for('student_dashboard') }}">Trang chủ SV</a> [cite: 60]
-                <a href="{{ url_for('student_profile') }}">Thông tin cá nhân</a> [cite: 62]
-                <a href="{{ url_for('student_grades') }}">Xem điểm</a> [cite: 65]
-            
-            {% elif current_user.vai_tro.value == 'GIAOVIEN' %}
-                <a href="{{ url_for('admin_dashboard') }}">Trang chủ GV</a> [cite: 77]
-                <a href="{{ url_for('admin_manage_students') }}">Quản lý Sinh viên</a> 
-                <a href="{{ url_for('admin_manage_courses') }}">Quản lý Môn học</a> 
-                <a href="{{ url_for('admin_manage_grades') }}" style="color: #0275d8; font-weight: bold;">Quản lý Điểm</a> 
-                <a href="{{ url_for('admin_reports_index') }}" style="color: #5cb85c; font-weight: bold;">Báo cáo & Thống kê</a> 
-                <a href="{{ url_for('admin_send_notification') }}" style="color: #f0ad4e; font-weight: bold;">Gửi Thông báo</a>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            {% block content %}
+                <div class="card">
+                    <div class="card-header">Chào mừng</div>
+                    <div class="card-body">
+                        Đây là hệ thống Quản lý Sinh viên.
+                    </div>
+                </div>
+            {% endblock %}
+
+        </main>
+
+        <aside class="sidebar-right">
+
+            {% if current_user.is_authenticated %}
+                
+                <div class="sidebar-group">
+                    <h3 class="sidebar-header">Tài khoản</h3>
+                    <div class="sidebar-content">
+                        <strong>Tài khoản:</strong> {{ current_user.username }}<br>
+                        <strong>Họ tên:</strong> {{ current_user.sinh_vien.ho_ten if current_user.sinh_vien else 'Giáo vụ' }}<br>
+                        <strong>Vai trò:</strong> {{ 'Sinh viên' if current_user.vai_tro.value == 'SINHVIEN' else 'Giáo viên' }}
+                    </div>
+                    <nav class="sidebar-nav">
+                        <a href="{{ url_for('logout') }}" class="logout-link">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            Đăng xuất
+                        </a>
+                    </nav>
+                </div>
+
+                <div class="sidebar-group">
+                    <h3 class="sidebar-header">Tính năng</h3>
+                    <nav class="sidebar-nav">
+                    {% if current_user.vai_tro.value == 'SINHVIEN' %}
+                        <a href="{{ url_for('student_dashboard') }}"><i class="fa-solid fa-bell"></i> Thông báo</a>
+                        <a href="{{ url_for('student_profile') }}"><i class="fa-solid fa-user-pen"></i> Thông tin cá nhân</a>
+                        <a href="#"><i class="fa-solid fa-book-open"></i> Chương trình học</a>
+                        <a href="{{ url_for('student_grades') }}"><i class="fa-solid fa-chart-simple"></i> Xem điểm & GPA</a>
+                        <a href="#"><i class="fa-solid fa-calendar-days"></i> Xem lịch học</a>
+                        <a href="#"><i class="fa-solid fa-file-pen"></i> Đăng ký môn học</a>
+                    {% elif current_user.vai_tro.value == 'GIAOVIEN' %}
+                        <a href="{{ url_for('admin_dashboard') }}"><i class="fa-solid fa-chart-pie"></i> Thống kê chung</a>
+                        <a href="{{ url_for('admin_manage_students') }}"><i class="fa-solid fa-users"></i> Quản lý Sinh viên</a>
+                        <a href="{{ url_for('admin_import_students') }}"><i class="fa-solid fa-file-excel"></i> Nhập Sinh viên (Excel)</a>
+                        <a href="{{ url_for('admin_manage_courses') }}"><i class="fa-solid fa-book"></i> Quản lý Môn học</a>
+                        <a href="{{ url_for('admin_manage_grades') }}"><i class="fa-solid fa-pen-to-square"></i> Quản lý Điểm</a>
+                        <a href="{{ url_for('admin_export_grades') }}"><i class="fa-solid fa-file-export"></i> Xuất điểm (Excel)</a>
+                        <a href="{{ url_for('admin_reports_index') }}"><i class="fa-solid fa-chart-bar"></i> Báo cáo & Thống kê</a>
+                        <a href="{{ url_for('admin_send_notification') }}"><i class="fa-solid fa-paper-plane"></i> Gửi Thông báo</a>
+                    {% endif %}
+                    </nav>
+                </div>
+
+            {% else %}
+
+                <div class="sidebar-group">
+                    <h3 class="sidebar-header">Đăng nhập</h3>
+                    <div class="sidebar-content">
+                        <p>Vui lòng đăng nhập tại trang chính để sử dụng các tính năng.</p>
+                    </div>
+                </div>
 
             {% endif %}
-            
-            <a href="{{ url_for('logout') }}" class="logout-link">Đăng xuất ({{ current_user.username }})</a>
-        
-        {% else %}
-            <a href="{{ url_for('login') }}">Đăng nhập</a>
-        {% endif %}
-    </nav>
 
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+        </aside>
 
-        {% block content %}{% endblock %}
     </div>
+
+    <footer class="app-footer">
+        <p>Copyright &copy; 2024 - Hệ thống Quản lý Sinh viên (Phát triển bởi Trần Trung Nghĩa)</p>
+        <div class="footer-stats">
+            <span><i class="fa-solid fa-globe"></i> Đang truy cập: 15</span>
+            <span><i class="fa-solid fa-user-graduate"></i> SV đăng nhập: 82</span>
+            <span><i class="fa-solid fa-user-tie"></i> GV đăng nhập: 4</span>
+        </div>
+    </footer>
+
 </body>
 </html>

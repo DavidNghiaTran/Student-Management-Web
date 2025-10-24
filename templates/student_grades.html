@@ -1,12 +1,35 @@
 {% extends "_layout.html" %}
 
-{% block title %}Bảng điểm{% endblock %}
+{% block title %}Bảng điểm & GPA{% endblock %}
 
 {% block content %}
     <h2>Bảng điểm cá nhân</h2>
     
-    <h3>Điểm trung bình (GPA Thang 10): {{ "%.2f"|format(gpa) }}</h3>
+    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+        <div style="padding: 15px; background-color: #f4f4f4; border-radius: 8px;">
+            <h3 style="margin: 0 0 5px 0;">GPA (Hệ 10) </h3>
+            <strong style="font-size: 2em; color: #0275d8;">{{ "%.2f"|format(gpa_10) }}</strong>
+        </div>
+        <div style="padding: 15px; background-color: #f4f4f4; border-radius: 8px;">
+            <h3 style="margin: 0 0 5px 0;">GPA (Hệ 4) - Mới</h3>
+            <strong style="font-size: 2em; color: #5cb85c;">{{ "%.2f"|format(gpa_4) }}</strong>
+        </div>
+    </div>
     
+    <hr style="margin: 25px 0;">
+
+    <h2>Biểu đồ điểm (Tất cả các môn)</h2>
+    <p>
+        <strong>Lưu ý:</strong> Mô hình CSDL hiện tại không lưu trữ thông tin "Học kỳ", 
+        vì vậy biểu đồ này hiển thị điểm của <strong>tất cả</strong> các môn đã học.
+    </p>
+    <div style="max-width: 900px; margin: auto;">
+        <canvas id="gradesChart"></canvas>
+    </div>
+
+    <hr style="margin: 25px 0;">
+
+    <h2>Chi tiết điểm </h2>
     <table>
         <thead>
             <tr>
@@ -24,7 +47,7 @@
                 <td>{{ row.ma_mh }}</td>
                 <td>{{ row.ten_mh }}</td>
                 <td>{{ row.so_tin_chi }}</td>
-                <td>{{ row.diem_thi }}</td>
+                <td><strong>{{ row.diem_thi }}</strong></td>
             </tr>
             {% else %}
             <tr>
@@ -33,4 +56,73 @@
             {% endfor %}
         </tbody>
     </table>
+
+<script>
+    // Chờ cho trang tải xong
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Lấy dữ liệu (Mã môn & Điểm) mà app.py đã truyền sang
+        // Dùng |tojson để chuyển list Python thành mảng JavaScript an toàn
+        const labels = {{ chart_labels | tojson }};
+        const data = {{ chart_data | tojson }};
+
+        // Lấy thẻ canvas
+        const ctx = document.getElementById('gradesChart').getContext('2d');
+        
+        // Tạo biểu đồ
+        new Chart(ctx, {
+            type: 'bar', // Loại: Biểu đồ cột
+            data: {
+                labels: labels, // Trục hoành (Mã môn)
+                datasets: [{
+                    label: 'Điểm hệ 10', // Chú thích
+                    data: data, // Trục tung (Điểm 10)
+                    backgroundColor: 'rgba(2, 117, 216, 0.7)', // Màu cột
+                    borderColor: 'rgba(2, 117, 216, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Mã Môn học' // Trục hoành
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 10, // Giới hạn trục tung là 10
+                        title: {
+                            display: true,
+                            text: 'Điểm (Hệ 10)' // Trục tung
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false // Ẩn chú thích 'Điểm hệ 10' ở trên
+                    },
+                    tooltip: {
+                         // Hiển thị thêm Tên môn khi di chuột vào
+                         callbacks: {
+                            title: function(tooltipItems) {
+                                // Lấy index của cột được di chuột vào
+                                const index = tooltipItems[0].dataIndex;
+                                // Lấy tên môn học từ list 'results' (cần truyền thêm)
+                                // Tạm thời dùng Mã môn
+                                return 'Môn: ' + labels[index];
+                            },
+                            label: function(context) {
+                                return 'Điểm: ' + context.parsed.y;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

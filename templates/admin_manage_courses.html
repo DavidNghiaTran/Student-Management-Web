@@ -6,14 +6,14 @@
     <h2>Quản lý Môn học</h2>
     <a href="{{ url_for('admin_add_course') }}">Thêm Môn học mới</a>
 
+    ...
     <table>
         <thead>
             <tr>
                 <th>Mã Môn học</th>
                 <th>Tên Môn học</th>
                 <th>Số tín chỉ</th>
-                <th>Hành động</th>
-            </tr>
+                <th style="width: 150px;">Hành động</th> </tr>
         </thead>
         <tbody>
             {% for course in courses %}
@@ -21,15 +21,16 @@
                 <td>{{ course.ma_mh }}</td>
                 <td>{{ course.ten_mh }}</td>
                 <td>{{ course.so_tin_chi }}</td>
-                <td style="display: flex; gap: 5px;">
-                    <a href="{{ url_for('admin_edit_course', ma_mh=course.ma_mh) }}" style="text-decoration: none; padding: 5px; background: #f0ad4e; color: white; border-radius: 3px;">Sửa</a>
+                
+                <td class="action-buttons">
+                    <a href="{{ url_for('admin_edit_course', ma_mh=course.ma_mh) }}" class="btn btn-edit">Sửa</a>
                     
                     <form method="POST" action="{{ url_for('admin_delete_course', ma_mh=course.ma_mh) }}" 
-                          onsubmit="return confirm('Bạn có chắc muốn xóa môn học {{ course.ten_mh }}? Thao tác này sẽ xóa cả ĐIỂM THI của sinh viên liên quan đến môn này.');">
-                        <input type="submit" value="Xóa" style="background: #d9534f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;">
+                          onsubmit="return confirm('Bạn có chắc muốn xóa môn học {{ course.ten_mh }}? Thao tác này sẽ xóa cả ĐIỂM THI của sinh viên liên quan đến môn này.');"
+                          style="margin: 0;"> <input type="submit" value="Xóa" class="btn btn-delete">
                     </form>
                 </td>
-            </tr>
+                </tr>
             {% else %}
             <tr>
                 <td colspan="4">Chưa có môn học nào.</td>
@@ -37,4 +38,5 @@
             {% endfor %}
         </tbody>
     </table>
+...
 {% endblock %}

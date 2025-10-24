@@ -2,45 +2,142 @@
 
 {% block title %}Trang chủ Sinh viên{% endblock %}
 
-{% block content %}
-    {% if sinh_vien %}
-        <h2>Chào mừng, {{ sinh_vien.ho_ten }}!</h2>
-        <p>Đây là trang quản lý thông tin của bạn. Lớp: <strong>{{ sinh_vien.lop }}</strong></p>
-    {% else %}
-        <h2>Chào mừng, {{ current_user.username }}!</h2>
-        <p style="color:red;">(Tài khoản của bạn chưa được liên kết với hồ sơ sinh viên. Vui lòng liên hệ giáo vụ.)</p>
-    {% endif %}
-    
-    <hr style="margin: 25px 0;">
-    
-    <h3>Thông báo mới nhất cho Lớp {{ sinh_vien.lop }}</h3>
-    
-    <style>
-        .notification-box {
-            border: 1px solid #ddd;
-            border-left: 5px solid #0275d8;
-            background: #f9f9f9;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* 2 cột bằng nhau */
+        gap: 20px;
+    }
+    /* Thẻ thông tin SV và Cố vấn */
+    .student-info-card {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    .student-info-card img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 3px solid #eee;
+    }
+    .student-info-card ul {
+        list-style: none;
+        padding-left: 0;
+        line-height: 1.8;
+    }
+    .student-info-card ul strong {
+        display: inline-block;
+        min-width: 90px;
+        color: #555;
+    }
+    /* Thẻ thông báo */
+    .notification-item {
+        border-bottom: 1px dashed #eee;
+        padding: 10px 0;
+    }
+    .notification-item:last-child { border-bottom: none; }
+    .notification-item a { 
+        text-decoration: none; 
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    .notification-item small { color: #777; }
+
+    /* Responsive cho Grid */
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr; /* 1 cột trên di động */
         }
-        .notification-box h4 { margin: 0 0 5px 0; }
-        .notification-box small { color: #555; }
-        .notification-box p { margin: 10px 0 0 0; }
-    </style>
+    }
+</style>
+
+{% block content %}
     
-    {% if notifications %}
-        {% for msg in notifications %}
-            <div class="notification-box">
-                <h4>{{ msg.tieu_de }}</h4>
-                <small>
-                    Từ: <strong>{{ msg.ma_gv }}</strong> | 
-                    Ngày: {{ msg.ngay_gui.strftime('%d-%m-%Y %H:%M') }}
-                </small>
-                <p>{{ msg.noi_dung | safe }}</p> </div>
-        {% endfor %}
-    {% else %}
-        <p>Hiện không có thông báo nào cho lớp của bạn.</p>
-    {% endif %}
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-header">Thông tin sinh viên</div>
+            <div class="card-body student-info-card">
+                <img src="{{ url_for('static', filename='avatar_default.png') }}" alt="Ảnh đại diện">
+                <ul>
+                    <li><strong>Mã SV:</strong> {{ sinh_vien.ma_sv }}</li>
+                    <li><strong>Họ tên:</strong> {{ sinh_vien.ho_ten }}</li>
+                    <li><strong>Ngày sinh:</strong> {{ sinh_vien.ngay_sinh.strftime('%d-%m-%Y') if sinh_vien.ngay_sinh else 'N/A' }}</li>
+                    <li><strong>Email:</strong> {{ sinh_vien.email or 'N/A' }}</li>
+                    <li><strong>Trạng thái:</strong> Đang học</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Thông tin khóa học</div>
+            <div class="card-body student-info-card">
+                <ul>
+                    <li><strong>Lớp:</strong> {{ sinh_vien.lop or 'N/A' }}</li>
+                    <li><strong>Khoa:</strong> {{ sinh_vien.khoa or 'N/A' }}</li>
+                    <li><strong>Khóa học:</strong> 2022-2027 (Ví dụ)</li>
+                    <li><strong>Cố vấn:</strong> Nguyễn Thị Thủy Nga (Ví dụ)</li>
+                    <li><strong>Email CV:</strong> ngantt2@ptit.edu.vn (Ví dụ)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Thông báo mới nhất (Lớp: {{ sinh_vien.lop }})</div>
+        <div class="card-body">
+            {% if notifications %}
+                {% for msg in notifications %}
+                <div class="notification-item">
+                    <a href="#">{{ msg.tieu_de }}</a><br>
+                    <small>
+                        Từ: <strong>{{ msg.ma_gv }}</strong> | 
+                        Ngày: {{ msg.ngay_gui.strftime('%d-%m-%Y %H:%M') }}
+                    </small>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>Hiện không có thông báo nào cho lớp của bạn.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Kết quả học tập (Tổng quan)</div>
+        <div class="card-body">
+            <p>Biểu đồ hiển thị điểm (hệ 10) của tất cả các môn đã có điểm.</p>
+            <div style="max-width: 900px; margin: 20px auto 0 auto;">
+                <canvas id="gradesChart"></canvas>
+            </div>
+        </div>
+    </div>
     
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lấy dữ liệu từ app.py
+        const labels = {{ chart_labels | tojson | safe }};
+        const data = {{ chart_data | tojson | safe }};
+
+        const ctx = document.getElementById('gradesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Điểm hệ 10',
+                    data: data,
+                    backgroundColor: 'rgba(183, 28, 28, 0.7)', // Màu đỏ
+                    borderColor: 'rgba(183, 28, 28, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 10 }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    });
+    </script>
+
 {% endblock %}

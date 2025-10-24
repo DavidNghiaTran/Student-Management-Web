@@ -1,0 +1,45 @@
+{% extends "_layout.html" %}
+
+{% block title %}Thông tin cá nhân{% endblock %}
+
+{% block content %}
+    <h2>Thông tin cá nhân</h2>
+    <p>Bạn có thể cập nhật các thông tin cá nhân của mình tại đây.</p>
+    
+    <form method="POST" action="{{ url_for('student_profile') }}">
+        <p>
+            <label>Mã Sinh viên:</label>
+            <input type="text" value="{{ sv.ma_sv }}" disabled>
+        </p>
+        <p>
+            <label>Lớp:</label>
+            <input type="text" value="{{ sv.lop }}" disabled>
+        </p>
+        <p>
+            <label>Khoa:</label>
+            <input type="text" value="{{ sv.khoa }}" disabled>
+        </p>
+        
+        <hr style="margin: 20px 0;">
+        
+        <p>
+            <label for="ho_ten">Họ tên:</label>
+            <input type="text" name="ho_ten" id="ho_ten" value="{{ sv.ho_ten or '' }}" required>
+        </p>
+        <p>
+            <label for="ngay_sinh">Ngày sinh (YYYY-MM-DD):</label>
+            <input type="date" name="ngay_sinh" id="ngay_sinh" value="{{ sv.ngay_sinh.strftime('%Y-%m-%d') if sv.ngay_sinh else '' }}" required>
+        </p>
+        <p>
+            <label for="email">Email:</label>
+            <input type="text" name="email" id="email" value="{{ sv.email or '' }}">
+        </p>
+        <p>
+            <label for="location">Địa chỉ (Location):</label>
+            <input type="text" name="location" id="location" value="{{ sv.location or '' }}">
+        </p>
+        <p>
+            <input type="submit" value="Lưu thay đổi">
+        </p>
+    </form>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "_layout.html" %}
+
+{% block title %}Xuất Bảng điểm Excel{% endblock %}
+
+{% block content %}
+    <h2>Xuất Bảng điểm ra Excel (Theo Lớp)</h2>
+    <p>
+        Vui lòng chọn Lớp. Hệ thống sẽ tạo một file Excel
+        với danh sách sinh viên của lớp đó (hàng) và điểm
+        của các môn học (cột).
+    </p>
+
+    <form method="POST" action="{{ url_for('admin_perform_export') }}">
+        <p>
+            <label for="lop">Chọn Lớp:</label>
+            <select name="lop" id="lop" required style="width: 320px;">
+                <option value="">-- Vui lòng chọn --</option>
+                {% for lop in danh_sach_lop %}
+                    <option value="{{ lop }}">{{ lop }}</option>
+                {% endfor %}
+            </select>
+        </p>
+        <p>
+            <input type="submit" value="Xuất file Excel" style="background: #5cb85c; color: white;">
+        </p>
+    </form>
+{% endblock %}

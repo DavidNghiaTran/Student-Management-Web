@@ -1,5 +1,29 @@
+def convert_10_to_4_scale(diem_10):
+    """
+    Hàm trợ giúp đề xuất: Chuyển điểm 10 sang điểm 4.
+    (Dựa trên thang điểm tín chỉ thông thường)
+    """
+    if diem_10 >= 8.5:
+        return 4.0  # A
+    elif diem_10 >= 8.0:
+        return 3.5  # B+
+    elif diem_10 >= 7.0:
+        return 3.0  # B
+    elif diem_10 >= 6.5:
+        return 2.5  # C+
+    elif diem_10 >= 5.5:
+        return 2.0  # C
+    elif diem_10 >= 5.0:
+        return 1.5  # D+
+    elif diem_10 >= 4.0:
+        return 1.0  # D
+    else:
+        return 0.0  # F
 import os
 import enum
+import pandas as pd
+import io
+from flask import send_file
 from flask import Flask, render_template, request, redirect, url_for, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -63,13 +87,16 @@ class TaiKhoan(UserMixin, db.Model):
 # 2.2. Bảng SinhVien 
 class SinhVien(db.Model):
     __tablename__ = 'sinh_vien'
-    # Quan hệ 1-1: MaSV là PK và cũng là FK tham chiếu đến TaiKhoan(username) 
-    # ondelete='CASCADE' để khi xóa TaiKhoan, SinhVien cũng bị xóa
     ma_sv = db.Column(db.String(50), db.ForeignKey('tai_khoan.username', ondelete='CASCADE'), primary_key=True)
     ho_ten = db.Column(db.String(100), nullable=False)
     ngay_sinh = db.Column(db.Date)
     lop = db.Column(db.String(50))
     khoa = db.Column(db.String(100))
+    
+    # === CẬP NHẬT MỚI ===
+    email = db.Column(db.String(150), unique=True, nullable=True)
+    location = db.Column(db.String(200), nullable=True) # (Địa chỉ/Vị trí)
+    # ====================
 
     # Định nghĩa quan hệ 1-1 với TaiKhoan
     # Khi xóa SinhVien, 'tai_khoan' liên quan cũng bị xóa (cascade)
@@ -197,21 +224,55 @@ def logout():
 
 # 4.2. Chức năng của Sinh viên 
 
+# === ĐÃ SỬA LỖI: THÊM LOGIC LẤY THÔNG BÁO ===
 @app.route('/student/dashboard')
 @login_required
 @role_required(VaiTroEnum.SINHVIEN) # 
 def student_dashboard():
     # Chào mừng 
-    # Lấy thông tin từ bảng SinhVien dựa trên MaSV (là current_user.username)
     sinh_vien = SinhVien.query.get(current_user.username)
-    return render_template('student_dashboard.html', sinh_vien=sinh_vien)
+    
+    # Logic MỚI: Lấy thông báo cho lớp của sinh viên
+    notifications = []
+    if sinh_vien and sinh_vien.lop:
+        notifications = ThongBao.query.filter_by(
+            lop_nhan=sinh_vien.lop
+        ).order_by(
+            ThongBao.ngay_gui.desc() # Sắp xếp mới nhất lên đầu
+        ).limit(10).all() # Chỉ lấy 10 thông báo gần nhất
 
-@app.route('/student/profile')
+    return render_template('student_dashboard.html', sinh_vien=sinh_vien, notifications=notifications)
+
+@app.route('/student/profile', methods=['GET', 'POST']) # <-- THÊM METHODS
 @login_required
 @role_required(VaiTroEnum.SINHVIEN)
 def student_profile():
-    # Lấy thông tin cá nhân (chỉ đọc) 
-    sinh_vien = SinhVien.query.get(current_user.username)
+    # Lấy thông tin cá nhân 
+    sinh_vien = SinhVien.query.get_or_404(current_user.username)
+    
+    if request.method == 'POST':
+        # YÊU CẦU MỚI: Cho phép sinh viên sửa thông tin
+        try:
+            # Lấy dữ liệu từ form
+            # SV không được sửa MaSV, Lớp, Khoa (chỉ admin mới được)
+            sinh_vien.ho_ten = request.form.get('ho_ten')
+            sinh_vien.ngay_sinh = db.func.date(request.form.get('ngay_sinh'))
+            sinh_vien.email = request.form.get('email')
+            sinh_vien.location = request.form.get('location')
+            
+            db.session.commit()
+            flash('Cập nhật thông tin cá nhân thành công!', 'success')
+            return redirect(url_for('student_profile'))
+            
+        except Exception as e:
+            db.session.rollback()
+            # Xử lý lỗi nếu email bị trùng
+            if 'UNIQUE constraint failed: sinh_vien.email' in str(e):
+                 flash('Lỗi: Email này đã được sử dụng bởi một tài khoản khác.', 'danger')
+            else:
+                flash(f'Lỗi khi cập nhật thông tin: {e}', 'danger')
+            
+    # Trang GET (hoặc khi POST bị lỗi)
     return render_template('student_profile.html', sv=sinh_vien)
 
 @app.route('/student/grades')
@@ -231,18 +292,39 @@ def student_grades():
         KetQua, MonHoc.ma_mh == KetQua.ma_mh
     ).filter(
         KetQua.ma_sv == ma_sv
-    ).all()
+    ).order_by(MonHoc.ma_mh).all() # Sắp xếp theo mã môn
     
-    # Logic tính GPA (thang 10) 
-    total_points = 0
+    # Logic tính GPA (thang 10) VÀ GPA (thang 4) MỚI
+    total_points_10 = 0
+    total_points_4 = 0
     total_credits = 0
+    
+    # Dữ liệu cho biểu đồ
+    chart_labels = [] # Trục hoành (Mã môn)
+    chart_data = [] # Trục tung (Điểm 10)
+
     for row in results:
-        total_points += row.diem_thi * row.so_tin_chi
+        # Tính điểm cho GPA
+        diem_he_4 = convert_10_to_4_scale(row.diem_thi)
+        total_points_10 += row.diem_thi * row.so_tin_chi
+        total_points_4 += diem_he_4 * row.so_tin_chi
         total_credits += row.so_tin_chi
         
-    gpa = (total_points / total_credits) if total_credits > 0 else 0.0
+        # Thêm dữ liệu cho biểu đồ
+        chart_labels.append(row.ma_mh) # Trục hoành là Mã Môn
+        chart_data.append(row.diem_thi) # Trục tung là Điểm 10
+
+    gpa_10 = (total_points_10 / total_credits) if total_credits > 0 else 0.0
+    gpa_4 = (total_points_4 / total_credits) if total_credits > 0 else 0.0
     
-    return render_template('student_grades.html', results=results, gpa=gpa)
+    return render_template(
+        'student_grades.html', 
+        results=results, 
+        gpa_10=gpa_10,
+        gpa_4=gpa_4,
+        chart_labels=chart_labels,
+        chart_data=chart_data
+    )
 
 # 4.3. Chức năng của Giáo viên 
 
@@ -259,11 +341,52 @@ def admin_dashboard():
 @login_required
 @role_required(VaiTroEnum.GIAOVIEN)
 def admin_manage_students():
-    # Xem danh sách sinh viên 
-    # (Chưa làm phân trang và tìm kiếm, sẽ làm ở bước sau) 
-    students = SinhVien.query.all()
-    return render_template('admin_manage_students.html', students=students)
+    # Lấy các tham số tìm kiếm/lọc từ URL (request.args cho phương thức GET)
+    search_ma_sv = request.args.get('ma_sv', '')
+    search_ho_ten = request.args.get('ho_ten', '')
+    filter_lop = request.args.get('lop', '')
+    filter_khoa = request.args.get('khoa', '')
 
+    # Bắt đầu với một truy vấn cơ bản
+    query = SinhVien.query
+
+    # Áp dụng các bộ lọc động 
+    if search_ma_sv:
+        # Dùng .ilike() để tìm kiếm không phân biệt chữ hoa/thường
+        query = query.filter(SinhVien.ma_sv.ilike(f'%{search_ma_sv}%'))
+    if search_ho_ten:
+        query = query.filter(SinhVien.ho_ten.ilike(f'%{search_ho_ten}%'))
+    if filter_lop:
+        # Lọc chính xác theo Lớp
+        query = query.filter(SinhVien.lop == filter_lop)
+    if filter_khoa:
+        # Lọc chính xác theo Khoa
+        query = query.filter(SinhVien.khoa == filter_khoa)
+
+    # Thực thi truy vấn sau khi đã áp dụng các bộ lọc
+    students = query.order_by(SinhVien.ma_sv).all() # Sắp xếp theo MaSV
+
+    # Lấy danh sách Lớp và Khoa (duy nhất) để điền vào dropdown lọc
+    lop_hoc_tuples = db.session.query(SinhVien.lop).distinct().order_by(SinhVien.lop).all()
+    danh_sach_lop = [lop[0] for lop in lop_hoc_tuples if lop[0]]
+
+    khoa_tuples = db.session.query(SinhVien.khoa).distinct().order_by(SinhVien.khoa).all()
+    danh_sach_khoa = [khoa[0] for khoa in khoa_tuples if khoa[0]]
+
+    # Trả về template với danh sách sinh viên đã lọc và các danh sách để lọc
+    return render_template(
+        'admin_manage_students.html', 
+        students=students,
+        danh_sach_lop=danh_sach_lop,
+        danh_sach_khoa=danh_sach_khoa,
+        # Gửi lại các giá trị tìm kiếm để hiển thị trên form
+        search_params={
+            'ma_sv': search_ma_sv,
+            'ho_ten': search_ho_ten,
+            'lop': filter_lop,
+            'khoa': filter_khoa
+        }
+    )
 @app.route('/admin/students/add', methods=['GET', 'POST'])
 @login_required
 @role_required(VaiTroEnum.GIAOVIEN)
@@ -300,10 +423,11 @@ def admin_add_student():
                 ngay_sinh=db.func.date(ngay_sinh), # Chuyển string sang Date
                 lop=lop,
                 khoa=khoa
+                # (Lưu ý: Form thêm thủ công này không có location/email,
+                # chúng sẽ là NULL, điều này là bình thường)
             )
             
             # 3. Lưu vào CSDL
-            # Do quan hệ 1-1 và FK, ta phải add TaiKhoan trước
             db.session.add(new_account)
             db.session.add(new_student)
             db.session.commit()
@@ -317,8 +441,7 @@ def admin_add_student():
             return redirect(url_for('admin_add_student'))
             
     return render_template('admin_add_student.html')
-
-# ... (code cũ của hàm admin_add_student giữ nguyên) ...
+# === KẾT THÚC HÀM CẦN DÁN ===
 
 @app.route('/admin/students/edit/<ma_sv>', methods=['GET', 'POST'])
 @login_required
@@ -626,6 +749,29 @@ def calculate_gpa_expression():
         else_ = 0.0
     ).label("gpa")
 
+def calculate_gpa_4_expression():
+    """Trả về biểu thức SQLAlchemy để tính GPA 4.0."""
+    
+    # Dùng hàm convert_10_to_4_scale đã viết ở lần trước,
+    # nhưng chuyển đổi sang cú pháp 'case' của SQLAlchemy
+    diem_he_4 = case(
+        (KetQua.diem_thi >= 8.5, 4.0),
+        (KetQua.diem_thi >= 8.0, 3.5),
+        (KetQua.diem_thi >= 7.0, 3.0),
+        (KetQua.diem_thi >= 6.5, 2.5),
+        (KetQua.diem_thi >= 5.5, 2.0),
+        (KetQua.diem_thi >= 5.0, 1.5),
+        (KetQua.diem_thi >= 4.0, 1.0),
+        else_=0.0
+    )
+    
+    total_points_4 = func.sum(diem_he_4 * MonHoc.so_tin_chi)
+    total_credits = func.sum(MonHoc.so_tin_chi)
+    
+    return case(
+        (total_credits > 0, total_points_4 / total_credits),
+        else_=0.0
+    ).label("gpa_4")
 
 @app.route('/admin/reports')
 @login_required
@@ -642,20 +788,16 @@ def admin_reports_index():
 def admin_report_high_gpa():
     # Mốc điểm GPA cao (theo thang 10) 
     GPA_THRESHOLD = 8.0
-
-    # Đây là một truy vấn phức tạp:
-    # 1. Join SinhVien, KetQua, MonHoc
-    # 2. Group by (gom nhóm) theo từng SinhVien (MaSV, HoTen, Lop)
-    # 3. Tính GPA cho mỗi nhóm
-    # 4. Lọc (having) các nhóm có GPA > 8.0
     
-    gpa_expression = calculate_gpa_expression()
+    gpa_10_expression = calculate_gpa_expression()
+    gpa_4_expression = calculate_gpa_4_expression() # <-- GỌI HÀM MỚI
     
     results = db.session.query(
         SinhVien.ma_sv,
         SinhVien.ho_ten,
         SinhVien.lop,
-        gpa_expression # Sử dụng biểu thức GPA đã định nghĩa
+        gpa_10_expression, # Đổi tên cho rõ ràng
+        gpa_4_expression   # <-- THÊM GPA 4.0 VÀO QUERY
     ).join(
         KetQua, SinhVien.ma_sv == KetQua.ma_sv
     ).join(
@@ -663,14 +805,14 @@ def admin_report_high_gpa():
     ).group_by(
         SinhVien.ma_sv, SinhVien.ho_ten, SinhVien.lop
     ).having(
-        gpa_expression > GPA_THRESHOLD # Lọc sau khi group by
+        gpa_10_expression > GPA_THRESHOLD # Vẫn lọc theo GPA 10
     ).order_by(
-        gpa_expression.desc() # Sắp xếp GPA giảm dần
+        gpa_10_expression.desc() # Sắp xếp GPA giảm dần
     ).all()
 
     # Hiển thị bảng kết quả
     return render_template('admin_report_high_gpa.html', results=results, threshold=GPA_THRESHOLD)
-
+        
 
 # === Báo cáo 2: SV chưa thi môn X ===
 @app.route('/admin/reports/missing_grade', methods=['GET']) # Dùng GET với query param
@@ -803,6 +945,277 @@ def admin_send_notification():
             flash(f'Lỗi khi gửi thông báo: {e}', 'danger')
 
     return render_template('admin_send_notification.html', danh_sach_lop=danh_sach_lop)
+
+# ========================================================
+# === 4.8. CHỨC NĂNG NHẬP EXCEL HÀNG LOẠT (ĐÃ SỬA LỖI NaT) ===
+# ========================================================
+@app.route('/admin/import_students', methods=['GET', 'POST'])
+@login_required
+@role_required(VaiTroEnum.GIAOVIEN)
+def admin_import_students():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('Không có tệp nào được chọn.', 'danger')
+            return redirect(request.url)
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            flash('Chưa chọn tệp.', 'danger')
+            return redirect(request.url)
+
+        if file and file.filename.endswith(('.xls', '.xlsx')):
+            try:
+                # 1. Đọc file Excel
+                df = pd.read_excel(file)
+                
+                # 2. Validate các cột bắt buộc
+                required_columns = ['ma_sinh_vien', 'ten_sinh_vien', 'password', 'role']
+                if not all(col in df.columns for col in required_columns):
+                    flash(f'Lỗi: File Excel phải chứa các cột: {", ".join(required_columns)}', 'danger')
+                    return redirect(request.url)
+
+                created_count = 0
+                errors = []
+
+                # 3. Duyệt qua từng dòng trong Excel
+                for index, row in df.iterrows():
+                    ma_sv = str(row['ma_sinh_vien'])
+                    ten_sv = str(row['ten_sinh_vien'])
+                    password = str(row['password'])
+                    role_str = str(row['role']).upper()
+
+                    # Kiểm tra vai trò
+                    if role_str != 'SINHVIEN':
+                        errors.append(f'Dòng {index+2}: Vai trò "{role_str}" không hợp lệ, chỉ chấp nhận "SINHVIEN". Bỏ qua.')
+                        continue
+                        
+                    # Kiểm tra trùng MaSV 
+                    existing_user = TaiKhoan.query.get(ma_sv)
+                    if existing_user:
+                        errors.append(f'Dòng {index+2}: Mã SV "{ma_sv}" đã tồn tại. Bỏ qua.')
+                        continue
+
+                    # 4. Tạo TaiKhoan (Tự động băm mật khẩu) 
+                    new_account = TaiKhoan(
+                        username=ma_sv,
+                        vai_tro=VaiTroEnum.SINHVIEN
+                    )
+                    new_account.set_password(password)
+                    
+                    # === PHẦN SỬA LỖI NaT & NaN ===
+                    # 5. Tạo SinhVien (Xử lý cẩn thận giá trị NaN/NaT từ Pandas)
+                    
+                    # Lấy giá trị, nếu là NaN (hoặc NaT) thì chuyển thành None (SQL NULL)
+                    lop_val = row.get('lop', None)
+                    khoa_val = row.get('khoa', None)
+                    email_val = row.get('email', None)
+                    location_val = row.get('location', None)
+                    ngay_sinh_val = row.get('ngay_sinh', None)
+
+                    new_student = SinhVien(
+                        ma_sv=ma_sv,
+                        ho_ten=ten_sv,
+                        
+                        # pd.isna() kiểm tra cả NaN (float) và NaT (datetime)
+                        lop = None if pd.isna(lop_val) else str(lop_val),
+                        khoa = None if pd.isna(khoa_val) else str(khoa_val),
+                        email = None if pd.isna(email_val) else str(email_val),
+                        location = None if pd.isna(location_val) else str(location_val),
+                        ngay_sinh = None if pd.isna(ngay_sinh_val) else pd.to_datetime(ngay_sinh_val)
+                    )
+                    # === KẾT THÚC PHẦN SỬA LỖI ===
+                    
+                    db.session.add(new_account)
+                    db.session.add(new_student)
+                    created_count += 1
+
+                # 6. Lưu tất cả vào CSDL
+                db.session.commit()
+                
+                flash(f'Nhập file thành công! Đã thêm mới {created_count} sinh viên.', 'success')
+                # Hiển thị các lỗi (nếu có)
+                for error in errors:
+                    flash(error, 'warning')
+
+            except Exception as e:
+                db.session.rollback() # Hoàn tác nếu có lỗi
+                flash(f'Đã xảy ra lỗi nghiêm trọng khi đọc file: {e}', 'danger')
+            
+            return redirect(url_for('admin_manage_students'))
+
+    return render_template('admin_import_students.html')
+
+# ========================================================
+# === 4.9. CHỨC NĂNG XUẤT ĐIỂM EXCEL THEO LỚP (MỚI) ===
+# ========================================================
+
+@app.route('/admin/export_grades', methods=['GET'])
+@login_required
+@role_required(VaiTroEnum.GIAOVIEN)
+def admin_export_grades():
+    """Trang hiển thị dropdown để chọn Lớp."""
+    # Lấy danh sách lớp
+    lop_hoc_tuples = db.session.query(SinhVien.lop).distinct().order_by(SinhVien.lop).all()
+    danh_sach_lop = [lop[0] for lop in lop_hoc_tuples if lop[0]]
+    
+    return render_template('admin_export_grades.html', danh_sach_lop=danh_sach_lop)
+
+
+@app.route('/admin/export/perform', methods=['POST'])
+@login_required
+@role_required(VaiTroEnum.GIAOVIEN)
+def admin_perform_export():
+    """Xử lý logic và trả về file Excel."""
+    try:
+        selected_lop = request.form.get('lop')
+        if not selected_lop:
+            flash('Vui lòng chọn một lớp.', 'danger')
+            return redirect(url_for('admin_export_grades'))
+
+        # 1. Tìm tất cả sinh viên trong lớp đã chọn
+        students_in_class = SinhVien.query.filter_by(lop=selected_lop).all()
+        if not students_in_class:
+            flash(f'Không tìm thấy sinh viên nào trong lớp {selected_lop}.', 'warning')
+            return redirect(url_for('admin_export_grades'))
+
+        student_ids = [sv.ma_sv for sv in students_in_class]
+
+        # 2. Lấy TẤT CẢ điểm của các sinh viên này
+        #    Join với SinhVien (lấy HoTen) và MonHoc (lấy TenMH)
+        query_results = db.session.query(
+            SinhVien.ma_sv,
+            SinhVien.ho_ten,
+            MonHoc.ma_mh,
+            MonHoc.ten_mh,
+            KetQua.diem_thi
+        ).join(
+            KetQua, SinhVien.ma_sv == KetQua.ma_sv
+        ).join(
+            MonHoc, KetQua.ma_mh == MonHoc.ma_mh
+        ).filter(
+            SinhVien.ma_sv.in_(student_ids)
+        ).all()
+
+        if not query_results:
+            flash(f'Không tìm thấy dữ liệu điểm nào cho lớp {selected_lop}.', 'warning')
+            return redirect(url_for('admin_export_grades'))
+
+        # 3. Chuyển dữ liệu "dài" sang DataFrame của Pandas
+        df_long = pd.DataFrame(query_results, columns=['Mã SV', 'Họ tên', 'Mã MH', 'Tên Môn học', 'Điểm thi'])
+
+        # 4. Dùng PIVOT để tạo bảng điểm...
+        df_pivot = df_long.pivot_table(
+            index=['Mã SV', 'Họ tên'],
+            columns=['Mã MH', 'Tên Môn học'], # <-- Đây là nguyên nhân tạo MultiIndex
+            values='Điểm thi'
+        )
+        
+        # Reset index để 'Mã SV' và 'Họ tên' trở thành cột
+        df_pivot = df_pivot.reset_index()
+
+        # === SỬA LỖI: FLATTEN (LÀM PHẲNG) MULTIINDEX COLUMNS ===
+        # Lỗi xảy ra vì to_excel không hỗ trợ index=False với MultiIndex columns.
+        # Chúng ta sẽ chuyển các cột (tuple) thành (string).
+        # Ví dụ: ('Mã SV', '') -> 'Mã SV'
+        # Ví dụ: ('TEL1343', 'Cơ sở dữ liệu') -> 'TEL1343 (Cơ sở dữ liệu)'
+        
+        new_columns = []
+        for col in df_pivot.columns:
+            if col[1]: # Nếu phần tử thứ 2 (Tên MH) tồn tại (vd: 'Cơ sở dữ liệu')
+                new_columns.append(f"{col[0]} ({col[1]})") # Kết quả: 'TEL1343 (Cơ sở dữ liệu)'
+            else: # Ngược lại (là cột 'Mã SV' hoặc 'Họ tên', col[1] là rỗng)
+                new_columns.append(col[0])
+        
+        df_pivot.columns = new_columns
+        # === KẾT THÚC SỬA LỖI ===
+
+        # 5. Tạo file Excel trong bộ nhớ
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Bây giờ df_pivot không còn MultiIndex columns,
+            # nên index=False sẽ hoạt động bình thường
+            df_pivot.to_excel(writer, sheet_name=f'Diem_Lop_{selected_lop}', index=False)
+        output.seek(0) # Đưa con trỏ về đầu file
+        
+        # 6. Trả file về cho người dùng
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'BangDiem_Lop_{selected_lop}.xlsx'
+        )
+
+    except Exception as e:
+        flash(f'Đã xảy ra lỗi khi xuất file: {e}', 'danger')
+        return redirect(url_for('admin_export_grades'))
+
+# ========================================================
+# === 4.9. CHỨC NĂNG XUẤT EXCEL DANH SÁCH SV (MỚI) ===
+# ========================================================
+@app.route('/admin/export_students_excel')
+@login_required
+@role_required(VaiTroEnum.GIAOVIEN)
+def admin_export_students_excel():
+    try:
+        # SAO CHÉP Y HỆT LOGIC LỌC TỪ HÀM admin_manage_students 
+        search_ma_sv = request.args.get('ma_sv', '')
+        search_ho_ten = request.args.get('ho_ten', '')
+        filter_lop = request.args.get('lop', '')
+        filter_khoa = request.args.get('khoa', '')
+
+        query = SinhVien.query
+        if search_ma_sv:
+            query = query.filter(SinhVien.ma_sv.ilike(f'%{search_ma_sv}%'))
+        if search_ho_ten:
+            query = query.filter(SinhVien.ho_ten.ilike(f'%{search_ho_ten}%'))
+        if filter_lop:
+            query = query.filter(SinhVien.lop == filter_lop)
+        if filter_khoa:
+            query = query.filter(SinhVien.khoa == filter_khoa)
+
+        students = query.order_by(SinhVien.ma_sv).all()
+        
+        if not students:
+            flash('Không có dữ liệu sinh viên nào để xuất.', 'warning')
+            return redirect(url_for('admin_manage_students'))
+
+        # 2. Chuyển danh sách đối tượng (object) sang list dictionary
+        data_for_df = []
+        for sv in students:
+            data_for_df.append({
+                'Mã SV': sv.ma_sv,
+                'Họ tên': sv.ho_ten,
+                'Ngày sinh': sv.ngay_sinh,
+                'Lớp': sv.lop,
+                'Khoa': sv.khoa,
+                'Email': sv.email,
+                'Địa chỉ (Location)': sv.location
+            })
+        
+        # 3. Tạo DataFrame và file Excel
+        df = pd.DataFrame(data_for_df)
+        
+        # Định dạng lại cột Ngày sinh cho đẹp
+        if 'Ngày sinh' in df.columns:
+            df['Ngày sinh'] = pd.to_datetime(df['Ngày sinh']).dt.strftime('%d-%m-%Y')
+
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='DanhSachSinhVien', index=False)
+        output.seek(0)
+        
+        # 4. Trả file về cho người dùng
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='DanhSachSinhVien_Filtered.xlsx'
+        )
+
+    except Exception as e:
+        flash(f'Đã xảy ra lỗi khi xuất file: {e}', 'danger')
+        return redirect(url_for('admin_manage_students'))
 
 # --- 5. KHỞI CHẠY ỨNG DỤNG ---
 

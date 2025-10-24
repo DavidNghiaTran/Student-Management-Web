@@ -34,4 +34,30 @@
             {% endfor %}
         </tbody>
     </table>
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Mã SV</th>
+                <th>Họ tên</th>
+                <th>Lớp</th>
+                <th>GPA (Hệ 10)</th>
+                <th>GPA (Hệ 4)</th> </tr>
+        </thead>
+        <tbody>
+            {% for row in results %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ row.ma_sv }}</td>
+                <td>{{ row.ho_ten }}</td>
+                <td>{{ row.lop }}</td>
+                <td><strong>{{ "%.2f"|format(row.gpa) }}</strong></td>
+                <td><strong>{{ "%.2f"|format(row.gpa_4) }}</strong></td> </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">Không tìm thấy sinh viên nào có GPA > {{ threshold }}.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
