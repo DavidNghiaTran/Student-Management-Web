@@ -2,98 +2,139 @@
 
 {% block title %}Trang chủ Sinh viên{% endblock %}
 
+{% block styles %}
 <style>
     .dashboard-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr); /* 2 cột bằng nhau */
+        /* Tạo 2 cột, cột đầu tiên chiếm ít không gian hơn cho ảnh */
+        grid-template-columns: auto 1fr;
         gap: 20px;
+        align-items: start; /* Căn các card theo đầu */
     }
-    /* Thẻ thông tin SV và Cố vấn */
+
+    /* Thẻ thông tin SV */
     .student-info-card {
         display: flex;
-        align-items: center;
+        align-items: center; /* Căn giữa ảnh và text */
         gap: 20px;
+        padding-bottom: 0; /* Xóa padding dưới nếu không cần */
     }
-    .student-info-card img {
+    .student-avatar img {
         width: 100px;
         height: 100px;
-        border-radius: 50%;
+        border-radius: 50%; /* Ảnh tròn */
         border: 3px solid #eee;
+        object-fit: cover; /* Đảm bảo ảnh không bị méo */
     }
-    .student-info-card ul {
+    .student-details ul {
         list-style: none;
         padding-left: 0;
         line-height: 1.8;
+        font-size: 0.95rem;
     }
-    .student-info-card ul strong {
+    .student-details ul strong {
         display: inline-block;
         min-width: 90px;
         color: #555;
     }
+
     /* Thẻ thông báo */
+    .notification-list {
+        max-height: 300px; /* Giới hạn chiều cao, thêm thanh cuộn nếu cần */
+        overflow-y: auto;
+    }
     .notification-item {
         border-bottom: 1px dashed #eee;
-        padding: 10px 0;
+        padding: 12px 0;
     }
-    .notification-item:last-child { border-bottom: none; }
-    .notification-item a { 
-        text-decoration: none; 
-        color: var(--primary-color);
+    .notification-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+     }
+     .notification-item:first-child {
+        padding-top: 0;
+     }
+    .notification-item a {
+        text-decoration: none;
+        color: var(--primary-color); /* Sử dụng màu đỏ từ layout */
         font-weight: 500;
+        font-size: 1rem;
+        display: block; /* Cho link chiếm cả dòng */
+        margin-bottom: 4px;
     }
-    .notification-item small { color: #777; }
+     .notification-item a:hover {
+        text-decoration: underline;
+     }
+    .notification-item small {
+        color: #777;
+        font-size: 0.85rem;
+     }
+     .notification-item p.content { /* Thêm style cho nội dung nếu cần */
+        margin-top: 5px;
+        font-size: 0.9rem;
+        color: #444;
+     }
+
 
     /* Responsive cho Grid */
-    @media (max-width: 768px) {
+    @media (max-width: 992px) { /* Chuyển thành 1 cột sớm hơn */
         .dashboard-grid {
-            grid-template-columns: 1fr; /* 1 cột trên di động */
+            grid-template-columns: 1fr; /* 1 cột */
+        }
+    }
+     @media (max-width: 576px) { /* Style cho mobile */
+        .student-info-card {
+            flex-direction: column; /* Xếp ảnh trên text */
+            align-items: flex-start;
         }
     }
 </style>
+{% endblock %}
+
 
 {% block content %}
-    
+
     <div class="dashboard-grid">
         <div class="card">
             <div class="card-header">Thông tin sinh viên</div>
             <div class="card-body student-info-card">
-                <img src="{{ url_for('static', filename='avatar_default.png') }}" alt="Ảnh đại diện">
-                <ul>
-                    <li><strong>Mã SV:</strong> {{ sinh_vien.ma_sv }}</li>
-                    <li><strong>Họ tên:</strong> {{ sinh_vien.ho_ten }}</li>
-                    <li><strong>Ngày sinh:</strong> {{ sinh_vien.ngay_sinh.strftime('%d-%m-%Y') if sinh_vien.ngay_sinh else 'N/A' }}</li>
-                    <li><strong>Email:</strong> {{ sinh_vien.email or 'N/A' }}</li>
-                    <li><strong>Trạng thái:</strong> Đang học</li>
-                </ul>
+                <div class="student-avatar">
+                    <img src="{{ url_for('static', filename='avatar_default.png') }}" alt="Ảnh đại diện">
+                </div>
+                <div class="student-details">
+                    <ul>
+                        <li><strong>Mã SV:</strong> {{ sinh_vien.ma_sv if sinh_vien else 'N/A' }}</li>
+                        <li><strong>Họ tên:</strong> {{ sinh_vien.ho_ten if sinh_vien else 'N/A' }}</li>
+                        <li><strong>Ngày sinh:</strong> {{ sinh_vien.ngay_sinh.strftime('%d-%m-%Y') if sinh_vien and sinh_vien.ngay_sinh else 'N/A' }}</li>
+                        <li><strong>Email:</strong> {{ sinh_vien.email if sinh_vien and sinh_vien.email else 'N/A' }}</li>
+                        <li><strong>Trạng thái:</strong> Đang học</li> </ul>
+                </div>
             </div>
         </div>
 
         <div class="card">
             <div class="card-header">Thông tin khóa học</div>
-            <div class="card-body student-info-card">
-                <ul>
-                    <li><strong>Lớp:</strong> {{ sinh_vien.lop or 'N/A' }}</li>
-                    <li><strong>Khoa:</strong> {{ sinh_vien.khoa or 'N/A' }}</li>
-                    <li><strong>Khóa học:</strong> 2022-2027 (Ví dụ)</li>
-                    <li><strong>Cố vấn:</strong> Nguyễn Thị Thủy Nga (Ví dụ)</li>
-                    <li><strong>Email CV:</strong> ngantt2@ptit.edu.vn (Ví dụ)</li>
-                </ul>
+            <div class="card-body"> <ul style="list-style: none; padding-left: 0; line-height: 1.8; font-size: 0.95rem;">
+                     <li><strong>Lớp:</strong> {{ sinh_vien.lop if sinh_vien and sinh_vien.lop else 'N/A' }}</li>
+                     <li><strong>Khoa:</strong> {{ sinh_vien.khoa if sinh_vien and sinh_vien.khoa else 'N/A' }}</li>
+                     <li><strong>Khóa học:</strong> 2022-2027 (Ví dụ)</li> <hr style="border: none; border-top: 1px dashed #eee; margin: 10px 0;">
+                     <li><strong>Cố vấn HT:</strong> Nguyễn Thị Thủy Nga (Ví dụ)</li> <li><strong>Email CV:</strong> ngantt2@ptit.edu.vn (Ví dụ)</li> </ul>
             </div>
         </div>
     </div>
 
     <div class="card">
-        <div class="card-header">Thông báo mới nhất (Lớp: {{ sinh_vien.lop }})</div>
-        <div class="card-body">
+        <div class="card-header">Thông báo mới nhất (Lớp: {{ sinh_vien.lop if sinh_vien and sinh_vien.lop else 'N/A' }})</div>
+        <div class="card-body notification-list">
             {% if notifications %}
                 {% for msg in notifications %}
                 <div class="notification-item">
-                    <a href="#">{{ msg.tieu_de }}</a><br>
+                    <a href="#">{{ msg.tieu_de }}</a>
                     <small>
-                        Từ: <strong>{{ msg.ma_gv }}</strong> | 
+                        Từ: <strong>{{ msg.ma_gv }}</strong> |
                         Ngày: {{ msg.ngay_gui.strftime('%d-%m-%Y %H:%M') }}
                     </small>
-                </div>
+                    </div>
                 {% endfor %}
             {% else %}
                 <p>Hiện không có thông báo nào cho lớp của bạn.</p>
@@ -105,12 +146,16 @@
         <div class="card-header">Kết quả học tập (Tổng quan)</div>
         <div class="card-body">
             <p>Biểu đồ hiển thị điểm (hệ 10) của tất cả các môn đã có điểm.</p>
-            <div style="max-width: 900px; margin: 20px auto 0 auto;">
-                <canvas id="gradesChart"></canvas>
-            </div>
+            {% if chart_labels %}
+                <div style="max-width: 900px; margin: 20px auto 0 auto; height: 350px;"> <canvas id="gradesChart"></canvas>
+                </div>
+            {% else %}
+                <p>Chưa có dữ liệu điểm để vẽ biểu đồ.</p>
+            {% endif %}
         </div>
     </div>
-    
+
+    {% if chart_labels %}
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Lấy dữ liệu từ app.py
@@ -118,26 +163,46 @@
         const data = {{ chart_data | tojson | safe }};
 
         const ctx = document.getElementById('gradesChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Điểm hệ 10',
-                    data: data,
-                    backgroundColor: 'rgba(183, 28, 28, 0.7)', // Màu đỏ
-                    borderColor: 'rgba(183, 28, 28, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: { beginAtZero: true, max: 10 }
+        if (ctx) { // Kiểm tra xem canvas có tồn tại không
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Điểm hệ 10',
+                        data: data,
+                        backgroundColor: 'rgba(183, 28, 28, 0.7)', // Màu đỏ
+                        borderColor: 'rgba(183, 28, 28, 1)',
+                        borderWidth: 1
+                    }]
                 },
-                plugins: { legend: { display: false } }
-            }
-        });
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Cho phép biểu đồ co giãn chiều cao
+                    scales: {
+                         x: {
+                            title: {
+                                display: true,
+                                text: 'Mã Môn học'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                             title: {
+                                display: true,
+                                text: 'Điểm (Hệ 10)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
     });
     </script>
+    {% endif %}
 
 {% endblock %}

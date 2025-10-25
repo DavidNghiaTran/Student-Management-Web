@@ -19,6 +19,19 @@ def convert_10_to_4_scale(diem_10):
         return 1.0  # D
     else:
         return 0.0  # F
+# === THÊM HÀM HELPER PHÂN LOẠI GPA (HỆ 10) ===
+def classify_gpa_10(gpa):
+    if gpa >= 9.0:
+        return "Xuất sắc"
+    elif gpa >= 8.0:
+        return "Giỏi"
+    elif gpa >= 6.5:
+        return "Khá"
+    elif gpa >= 5.0:
+        return "Trung bình"
+    else:
+        return "Yếu"
+# ===============================================
 import os
 import enum
 import pandas as pd
@@ -37,11 +50,26 @@ from functools import wraps # Dùng để tạo decorator kiểm tra vai trò
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-app = Flask(__name__)
+# === THAY THẾ DÒNG app = Flask(__name__) BẰNG KHỐI CODE NÀY ===
+
+# Tính toán đường dẫn thư mục gốc (cha của thư mục 'api')
+project_root = os.path.abspath(os.path.join(basedir, '..'))
+# Tạo đường dẫn đầy đủ đến thư mục templates và static
+template_dir = os.path.join(project_root, 'templates')
+static_dir = os.path.join(project_root, 'static')
+
+# Khởi tạo Flask và chỉ định vị trí thư mục templates, static
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
+
+# Cập nhật đường dẫn CSDL để sử dụng project_root (Quan trọng!)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(project_root, 'qlsv.db')
+
+
 # Khóa bí mật để bảo vệ session
 app.config['SECRET_KEY'] = 'mot-khoa-bi-mat-rat-manh-theo-yeu-cau-bao-mat'
 # Cấu hình đường dẫn CSDL SQLite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'qlsv.db')
+project_root = os.path.abspath(os.path.join(basedir, '..'))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(project_root, 'qlsv.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -811,7 +839,27 @@ def admin_report_high_gpa():
     ).all()
 
     # Hiển thị bảng kết quả
-    return render_template('admin_report_high_gpa.html', results=results, threshold=GPA_THRESHOLD)
+    # === THÊM LOGIC ĐẾM PHÂN LOẠI CHO BIỂU ĐỒ ===
+    category_counts = {"Yếu": 0, "Trung bình": 0, "Khá": 0, "Giỏi": 0, "Xuất sắc": 0}
+    # Chỉ đếm dựa trên kết quả đã lọc (results)
+    for row in results:
+        category = classify_gpa_10(row.gpa) # Dùng GPA hệ 10 để phân loại
+        if category in category_counts:
+            category_counts[category] += 1
+            
+    # Chuẩn bị dữ liệu cho Chart.js
+    chart_labels = list(category_counts.keys())
+    chart_data = list(category_counts.values())
+    # =============================================
+
+    # Hiển thị bảng kết quả VÀ dữ liệu biểu đồ
+    return render_template(
+        'admin_report_high_gpa.html', 
+        results=results, 
+        threshold=GPA_THRESHOLD,
+        chart_labels=chart_labels, # <-- Gửi labels cho template
+        chart_data=chart_data     # <-- Gửi data count cho template
+    )
         
 
 # === Báo cáo 2: SV chưa thi môn X ===
@@ -850,59 +898,90 @@ def admin_report_missing_grade():
 
 
 # === Báo cáo 3: Thống kê điểm trung bình Lớp ===
+# === REPLACE the old admin_report_class_gpa function with this ===
 @app.route('/admin/reports/class_gpa', methods=['GET'])
 @login_required
 @role_required(VaiTroEnum.GIAOVIEN)
 def admin_report_class_gpa():
-    # Lấy danh sách Lớp (tương tự trang Nhập điểm)
+    # Lấy danh sách Lớp
     lop_hoc_tuples = db.session.query(SinhVien.lop).distinct().order_by(SinhVien.lop).all()
     danh_sach_lop = [lop[0] for lop in lop_hoc_tuples if lop[0]]
-    
+
     selected_lop = request.args.get('lop') # Lấy Lớp từ URL
-    
-    lop_gpa = None
+
+    lop_gpa_10 = None
+    lop_gpa_4 = None
+    chart_labels = []
+    chart_data = []
 
     if selected_lop:
-        # Logic tính GPA trung bình của LỚP
-        # 1. Join 3 bảng
-        # 2. Lọc (filter) theo Lớp đã chọn
-        # 3. Group by (gom nhóm) theo Lớp
-        # 4. Tính GPA trung bình của nhóm đó
-        
-        gpa_expression = calculate_gpa_expression()
+        # --- Logic tính GPA trung bình của LỚP (Cả hệ 10 và hệ 4) ---
 
-        # Truy vấn này tính GPA cho *từng sinh viên* TRONG LỚP ĐÓ
-        # Chúng ta cần tính GPA của cả lớp (trung bình của các GPA)
-        
-        # Bước 1: Tạo subquery tính GPA cho TỪNG SINH VIÊN trong lớp
-        subquery_gpa_sv = db.session.query(
-            SinhVien.ma_sv,
-            gpa_expression # GPA của 1 SV
+        # 1. Tạo subquery tính GPA 10 cho TỪNG SINH VIÊN trong lớp
+        gpa_10_expression = calculate_gpa_expression()
+        subquery_gpa_10_sv = db.session.query(
+            SinhVien.ma_sv.label('sv_id'), # Đặt tên label để dễ truy cập
+            gpa_10_expression # GPA 10 của 1 SV
         ).join(
             KetQua, SinhVien.ma_sv == KetQua.ma_sv
         ).join(
             MonHoc, KetQua.ma_mh == MonHoc.ma_mh
         ).filter(
-            SinhVien.lop == selected_lop # Lọc theo lớp
+            SinhVien.lop == selected_lop
         ).group_by(
             SinhVien.ma_sv
-        ).subquery() # Biến thành truy vấn con
+        ).subquery()
 
-        # Bước 2: Truy vấn chính: Tính TRUNG BÌNH (AVG) của các GPA từ truy vấn con
-        # Dùng func.avg() để tính trung bình
-        result = db.session.query(
-            func.avg(subquery_gpa_sv.c.gpa) # .c.gpa là truy cập cột gpa từ subquery
-        ).scalar() # .scalar() để lấy 1 giá trị duy nhất
-        
-        lop_gpa = result if result else 0.0
+        # 2. Tạo subquery tính GPA 4 cho TỪNG SINH VIÊN trong lớp
+        gpa_4_expression = calculate_gpa_4_expression()
+        subquery_gpa_4_sv = db.session.query(
+            SinhVien.ma_sv.label('sv_id'),
+            gpa_4_expression # GPA 4 của 1 SV
+        ).join(
+            KetQua, SinhVien.ma_sv == KetQua.ma_sv
+        ).join(
+            MonHoc, KetQua.ma_mh == MonHoc.ma_mh
+        ).filter(
+            SinhVien.lop == selected_lop
+        ).group_by(
+            SinhVien.ma_sv
+        ).subquery()
 
-    # Cung cấp dropdown chọn Lop
+        # 3. Tính TRUNG BÌNH (AVG) của các GPA từ subquery
+        avg_gpa_10_result = db.session.query(func.avg(subquery_gpa_10_sv.c.gpa)).scalar()
+        avg_gpa_4_result = db.session.query(func.avg(subquery_gpa_4_sv.c.gpa_4)).scalar()
+
+        lop_gpa_10 = avg_gpa_10_result if avg_gpa_10_result else 0.0
+        lop_gpa_4 = avg_gpa_4_result if avg_gpa_4_result else 0.0
+
+        # --- Logic đếm phân loại sinh viên cho biểu đồ ---
+        # Lấy GPA 10 của từng sinh viên trong lớp (từ subquery đã tạo)
+        student_gpas = db.session.query(subquery_gpa_10_sv.c.gpa).all()
+
+        category_counts = {"Yếu": 0, "Trung bình": 0, "Khá": 0, "Giỏi": 0, "Xuất sắc": 0}
+        if student_gpas:
+            for gpa_tuple in student_gpas:
+                # gpa_tuple[0] là giá trị GPA 10
+                category = classify_gpa_10(gpa_tuple[0])
+                if category in category_counts:
+                    category_counts[category] += 1
+
+        # Chuẩn bị dữ liệu cho Chart.js (chỉ lấy loại có SV > 0)
+        chart_labels = [label for label, count in category_counts.items() if count > 0]
+        chart_data = [count for label, count in category_counts.items() if count > 0]
+
+
+    # Cung cấp dropdown chọn Lop và gửi dữ liệu GPA, biểu đồ
     return render_template(
         'admin_report_class_gpa.html',
         danh_sach_lop=danh_sach_lop,
         selected_lop=selected_lop,
-        lop_gpa=lop_gpa
+        lop_gpa_10=lop_gpa_10,
+        lop_gpa_4=lop_gpa_4,        # <-- Thêm GPA 4
+        chart_labels=chart_labels, # <-- Thêm chart labels
+        chart_data=chart_data      # <-- Thêm chart data
     )
+# =========================================================
 
 # ========================================================
 # === 4.7. CHỨC NĂNG GỬI THÔNG BÁO (MỚI) ===
@@ -951,15 +1030,15 @@ def admin_send_notification():
 # ========================================================
 @app.route('/admin/import_students', methods=['GET', 'POST'])
 @login_required
-@role_required(VaiTroEnum.GIAOVIEN)
+@role_required(VaiTroEnum.GIAOVIEN) # <-- Đã sửa lỗi GIAOIAOVIEN thành GIAOVIEN
 def admin_import_students():
     if request.method == 'POST':
         if 'file' not in request.files:
             flash('Không có tệp nào được chọn.', 'danger')
             return redirect(request.url)
-        
+
         file = request.files['file']
-        
+
         if file.filename == '':
             flash('Chưa chọn tệp.', 'danger')
             return redirect(request.url)
@@ -968,7 +1047,7 @@ def admin_import_students():
             try:
                 # 1. Đọc file Excel
                 df = pd.read_excel(file)
-                
+
                 # 2. Validate các cột bắt buộc
                 required_columns = ['ma_sinh_vien', 'ten_sinh_vien', 'password', 'role']
                 if not all(col in df.columns for col in required_columns):
@@ -989,7 +1068,7 @@ def admin_import_students():
                     if role_str != 'SINHVIEN':
                         errors.append(f'Dòng {index+2}: Vai trò "{role_str}" không hợp lệ, chỉ chấp nhận "SINHVIEN". Bỏ qua.')
                         continue
-                        
+
                     # Kiểm tra trùng MaSV 
                     existing_user = TaiKhoan.query.get(ma_sv)
                     if existing_user:
@@ -1002,10 +1081,10 @@ def admin_import_students():
                         vai_tro=VaiTroEnum.SINHVIEN
                     )
                     new_account.set_password(password)
-                    
-                    # === PHẦN SỬA LỖI NaT & NaN ===
+
+                    # === PHẦN SỬA LỖI NaT & NaN (QUAN TRỌNG!) ===
                     # 5. Tạo SinhVien (Xử lý cẩn thận giá trị NaN/NaT từ Pandas)
-                    
+
                     # Lấy giá trị, nếu là NaN (hoặc NaT) thì chuyển thành None (SQL NULL)
                     lop_val = row.get('lop', None)
                     khoa_val = row.get('khoa', None)
@@ -1013,26 +1092,29 @@ def admin_import_students():
                     location_val = row.get('location', None)
                     ngay_sinh_val = row.get('ngay_sinh', None)
 
+                    # Dòng này kiểm tra nếu ngay_sinh_val là NaT thì gán None, ngược lại mới chuyển thành datetime
+                    ngay_sinh_final = None if pd.isna(ngay_sinh_val) else pd.to_datetime(ngay_sinh_val)
+
                     new_student = SinhVien(
                         ma_sv=ma_sv,
                         ho_ten=ten_sv,
-                        
+
                         # pd.isna() kiểm tra cả NaN (float) và NaT (datetime)
                         lop = None if pd.isna(lop_val) else str(lop_val),
                         khoa = None if pd.isna(khoa_val) else str(khoa_val),
                         email = None if pd.isna(email_val) else str(email_val),
                         location = None if pd.isna(location_val) else str(location_val),
-                        ngay_sinh = None if pd.isna(ngay_sinh_val) else pd.to_datetime(ngay_sinh_val)
+                        ngay_sinh = ngay_sinh_final # <-- SỬ DỤNG GIÁ TRỊ ĐÃ XỬ LÝ
                     )
                     # === KẾT THÚC PHẦN SỬA LỖI ===
-                    
+
                     db.session.add(new_account)
                     db.session.add(new_student)
                     created_count += 1
 
                 # 6. Lưu tất cả vào CSDL
                 db.session.commit()
-                
+
                 flash(f'Nhập file thành công! Đã thêm mới {created_count} sinh viên.', 'success')
                 # Hiển thị các lỗi (nếu có)
                 for error in errors:
@@ -1041,7 +1123,7 @@ def admin_import_students():
             except Exception as e:
                 db.session.rollback() # Hoàn tác nếu có lỗi
                 flash(f'Đã xảy ra lỗi nghiêm trọng khi đọc file: {e}', 'danger')
-            
+
             return redirect(url_for('admin_manage_students'))
 
     return render_template('admin_import_students.html')
