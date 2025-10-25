@@ -3,49 +3,52 @@
 {% block title %}Nhập điểm{% endblock %}
 
 {% block content %}
-    <h2>Quản lý Điểm thi - Bước 2: Nhập điểm</h2>
-    <p>
-        <strong>Lớp:</strong> {{ lop }} <br>
-        <strong>Môn học:</strong> {{ mon_hoc.ten_mh }} ({{ mon_hoc.ma_mh }})
-    </p>
-    <p>Nhập điểm (thang 10) cho sinh viên. Bỏ trống nếu không nhập điểm.</p>
-    
-    <form method="POST" action="{{ url_for('admin_save_grades') }}">
-        
-        <input type="hidden" name="lop" value="{{ lop }}">
-        <input type="hidden" name="ma_mh" value="{{ mon_hoc.ma_mh }}">
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>Mã SV</th>
-                    <th>Họ tên</th>
-                    <th style="width: 150px;">Điểm thi (0-10)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sv in danh_sach_nhap_diem %}
-                <tr>
-                    <td>{{ sv.ma_sv }}</td>
-                    <td>{{ sv.ho_ten }}</td>
-                    <td>
-                        <input type="number" 
-                               name="diem_{{ sv.ma_sv }}" 
-                               value="{{ sv.diem_thi if sv.diem_thi is not none else '' }}"
-                               min="0" 
-                               max="10" 
-                               step="0.01"
-                               style="width: 100%;">
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        <p style="margin-top: 20px;">
-            <input type="submit" value="Lưu tất cả thay đổi">
-        </p>
-    </form>
-    
-    <a href="{{ url_for('admin_manage_grades') }}">&laquo; Quay lại Bước 1 (Chọn Lớp/Môn)</a>
+    <div class="card">
+        <div class="card-header">Quản lý Điểm thi - Bước 2: Nhập điểm</div>
+        <div class="card-body">
+            <p>
+                <strong>Lớp:</strong> {{ lop }} <br>
+                <strong>Môn học:</strong> {{ mon_hoc.ten_mh }} ({{ mon_hoc.ma_mh }})
+            </p>
+            <p>Nhập điểm (thang 10) cho sinh viên. Bỏ trống nếu không nhập điểm.</p>
+            
+            <form method="POST" action="{{ url_for('admin_save_grades') }}">
+                
+                <input type="hidden" name="lop" value="{{ lop }}">
+                <input type="hidden" name="ma_mh" value="{{ mon_hoc.ma_mh }}">
+                
+                <table class="data-table"> 
+                    <thead>
+                        <tr>
+                            <th>Mã SV</th>
+                            <th>Họ tên</th>
+                            <th style="width: 150px;">Điểm thi (0-10)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sv in danh_sach_nhap_diem %}
+                        <tr>
+                            <td>{{ sv.ma_sv }}</td>
+                            <td>{{ sv.ho_ten }}</td>
+                            <td>
+                                <input type="number" 
+                                       name="diem_{{ sv.ma_sv }}" 
+                                       value="{{ sv.diem_thi if sv.diem_thi is not none else '' }}"
+                                       min="0" 
+                                       max="10" 
+                                       step="0.01"
+                                       style="width: 100%; max-width: 120px;"> </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <p style="margin-top: 20px;">
+                    <input type="submit" value="Lưu tất cả thay đổi" style="background-color: var(--primary-color);"> </p>
+            </form>
+            
+            <hr style="margin: 25px 0;">
+            <a href="{{ url_for('admin_manage_grades') }}">&laquo; Quay lại Bước 1 (Chọn Lớp/Môn)</a>
+        </div>
+    </div>
 {% endblock %}
