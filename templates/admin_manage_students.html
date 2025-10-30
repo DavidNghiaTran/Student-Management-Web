@@ -122,7 +122,7 @@
             <tr>
                 <td>{{ sv.ma_sv }}</td>
                 <td>{{ sv.ho_ten }}</td>
-                <td>{{ sv.ngay_sinh.strftime('%d-%m-%Y') if sv.ngay_sinh else '' }}</td>
+                <td>{{ sv.ngay_sinh | formatDate('dd-MM-yyyy') if sv.ngay_sinh else '' }}</td>
                 <td>{{ sv.lop }}</td>
                 <td>{{ sv.khoa }}</td>
                 
