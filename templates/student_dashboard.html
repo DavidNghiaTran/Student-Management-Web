@@ -105,7 +105,7 @@
                     <ul>
                         <li><strong>Mã SV:</strong> {{ sinh_vien.ma_sv if sinh_vien else 'N/A' }}</li>
                         <li><strong>Họ tên:</strong> {{ sinh_vien.ho_ten if sinh_vien else 'N/A' }}</li>
-                        <li><strong>Ngày sinh:</strong> {{ sinh_vien.ngay_sinh.strftime('%d-%m-%Y') if sinh_vien and sinh_vien.ngay_sinh else 'N/A' }}</li>
+                        <li><strong>Ngày sinh:</strong> {{ sinh_vien.ngay_sinh | formatDate('dd-MM-yyyy') if sinh_vien and sinh_vien.ngay_sinh else 'N/A' }}</li>
                         <li><strong>Email:</strong> {{ sinh_vien.email if sinh_vien and sinh_vien.email else 'N/A' }}</li>
                         <li><strong>Trạng thái:</strong> Đang học</li> </ul>
                 </div>
@@ -132,7 +132,7 @@
                     <a href="#">{{ msg.tieu_de }}</a>
                     <small>
                         Từ: <strong>{{ msg.ma_gv }}</strong> |
-                        Ngày: {{ msg.ngay_gui.strftime('%d-%m-%Y %H:%M') }}
+                        Ngày: {{ msg.ngay_gui | formatDateTime('dd-MM-yyyy HH:mm') }}
                     </small>
                     </div>
                 {% endfor %}

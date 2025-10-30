@@ -17,7 +17,7 @@
         </p>
         <p>
             <label>Ngày sinh (YYYY-MM-DD):</label>
-            <input type="date" name="ngay_sinh" value="{{ sv.ngay_sinh.strftime('%Y-%m-%d') }}" required>
+            <input type="date" name="ngay_sinh" value="{{ sv.ngay_sinh | formatDate('yyyy-MM-dd') }}" required>
         </p>
         <p>
             <label>Lớp:</label>

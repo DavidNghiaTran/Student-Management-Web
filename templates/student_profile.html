@@ -28,7 +28,7 @@
         </p>
         <p>
             <label for="ngay_sinh">Ngày sinh (YYYY-MM-DD):</label>
-            <input type="date" name="ngay_sinh" id="ngay_sinh" value="{{ sv.ngay_sinh.strftime('%Y-%m-%d') if sv.ngay_sinh else '' }}" required>
+            <input type="date" name="ngay_sinh" id="ngay_sinh" value="{{ sv.ngay_sinh | formatDate('yyyy-MM-dd') }}" required>
         </p>
         <p>
             <label for="email">Email:</label>
