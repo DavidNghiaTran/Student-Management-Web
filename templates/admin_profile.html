@@ -1,0 +1,91 @@
+{% extends "_layout.html" %}
+
+{% block title %}Hồ sơ Giáo viên{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+         Cập nhật Hồ sơ Giáo viên
+    </div>
+    <div class="card-body">
+        <p>Cập nhật thông tin cá nhân và thông tin chuyên môn của bạn.</p>
+
+        <form method="POST" action="{{ url_for('admin_profile') }}">
+            
+            <h3 style="margin-top: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">1. Thông tin cá nhân cơ bản</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <label>Mã Giáo viên:</label>
+                <input type="text" name="ma_gv" value="{{ gv.ma_gv }}" disabled>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="ho_ten">Họ tên:</label>
+                <input type="text" name="ho_ten" id="ho_ten" value="{{ gv.ho_ten or '' }}" required>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="email">Email (Dùng cho liên lạc):</label>
+                <input type="text" name="email" id="email" value="{{ gv.email or '' }}">
+            </div>
+            <div style="display: flex; gap: 20px;">
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="ngay_sinh">Ngày sinh (YYYY-MM-DD):</label>
+                    <input type="date" name="ngay_sinh" id="ngay_sinh" value="{{ gv.ngay_sinh.strftime('%Y-%m-%d') if gv.ngay_sinh else '' }}" style="width: 100%;">
+                </div>
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="gioi_tinh">Giới tính:</label>
+                    <select name="gioi_tinh" id="gioi_tinh" style="width: 100%;">
+                        <option value="" {% if not gv.gioi_tinh %}selected{% endif %}>-- Chọn --</option>
+                        <option value="Nam" {% if gv.gioi_tinh == 'Nam' %}selected{% endif %}>Nam</option>
+                        <option value="Nữ" {% if gv.gioi_tinh == 'Nữ' %}selected{% endif %}>Nữ</option>
+                        <option value="Khác" {% if gv.gioi_tinh == 'Khác' %}selected{% endif %}>Khác</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="so_dien_thoai">Số điện thoại:</label>
+                <input type="text" name="so_dien_thoai" id="so_dien_thoai" value="{{ gv.so_dien_thoai or '' }}">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="dia_chi">Địa chỉ liên lạc:</label>
+                <input type="text" name="dia_chi" id="dia_chi" value="{{ gv.dia_chi or '' }}">
+            </div>
+
+            <h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">2. Thông tin chuyên môn - công tác</h3>
+
+            <div style="display: flex; gap: 20px;">
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="bo_mon_khoa">Bộ môn / Khoa:</label>
+                    <input type="text" name="bo_mon_khoa" id="bo_mon_khoa" value="{{ gv.bo_mon_khoa or '' }}">
+                </div>
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="chuc_vu">Chức vụ:</label>
+                    <input type="text" name="chuc_vu" id="chuc_vu" value="{{ gv.chuc_vu or '' }}">
+                </div>
+            </div>
+             <div style="display: flex; gap: 20px;">
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="trinh_do_hoc_van">Trình độ học vấn:</label>
+                    <input type="text" name="trinh_do_hoc_van" id="trinh_do_hoc_van" value="{{ gv.trinh_do_hoc_van or '' }}">
+                </div>
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="so_nam_kinh_nghiem">Số năm kinh nghiệm:</label>
+                    <input type="number" name="so_nam_kinh_nghiem" id="so_nam_kinh_nghiem" value="{{ gv.so_nam_kinh_nghiem or '' }}" min="0">
+                </div>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="linh_vuc">Lĩnh vực giảng dạy / nghiên cứu:</label>
+                <textarea name="linh_vuc" id="linh_vuc" rows="3" style="width: 100%;">{{ gv.linh_vuc or '' }}</textarea>
+            </div>
+             <div style="margin-bottom: 15px;">
+                <label for="mon_hoc_phu_trach">Môn học phụ trách (Liệt kê, cách nhau bằng dấu phẩy):</label>
+                <textarea name="mon_hoc_phu_trach" id="mon_hoc_phu_trach" rows="3" style="width: 100%;">{{ gv.mon_hoc_phu_trach or '' }}</textarea>
+            </div>
+
+            <div>
+                <input type="submit" value="Lưu thay đổi">
+            </div>
+        </form>
+
+    </div> 
+</div> 
+{% endblock %}

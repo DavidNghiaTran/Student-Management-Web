@@ -3,30 +3,89 @@
 {% block title %}Quản lý Điểm thi{% endblock %}
 
 {% block content %}
-    <h2>Quản lý Điểm thi - Bước 1: Chọn Lớp và Môn học</h2>
-    <p>Vui lòng chọn Lớp và Môn học để bắt đầu nhập điểm. </p>
+<div class="card">
+    <div class="card-header">Quản lý Điểm thi</div>
+    <div class="card-body">
 
-    <form method="POST" action="{{ url_for('admin_manage_grades') }}">
-        <p>
-            <label for="lop">Chọn Lớp:</label>
-            <select name="lop" id="lop" required style="padding: 10px; width: 320px;">
-                <option value="">-- Vui lòng chọn --</option>
-                {% for lop in danh_sach_lop %}
-                    <option value="{{ lop }}">{{ lop }}</option>
-                {% endfor %}
-            </select>
-        </p>
-        <p>
-            <label for="ma_mh">Chọn Môn học:</label>
-            <select name="ma_mh" id="ma_mh" required style="padding: 10px; width: 320px;">
-                <option value="">-- Vui lòng chọn --</option>
-                {% for mh in danh_sach_mon_hoc %}
-                    <option value="{{ mh.ma_mh }}">{{ mh.ten_mh }} ({{ mh.ma_mh }})</option>
-                {% endfor %}
-            </select>
-        </p>
-        <p>
-            <input type="submit" value="Hiển thị Danh sách Nhập điểm">
-        </p>
-    </form>
-{% endblock %}
+        <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+            <a href="{{ url_for('admin_import_grades') }}" class="btn" style="background-color: #17a2b8;">
+                <i class="fa-solid fa-file-excel"></i> Nhập điểm từ File Excel
+            </a>
+            <p style="font-size: 0.9em; color: #555; margin-top: 8px;">Hoặc chọn Lớp/Môn để xem/sửa điểm thủ công bên dưới:</p>
+        </div>
+
+        <p style="font-weight: 500;">Chọn Lớp và Môn học để xem điểm chi tiết:</p>
+
+        <form method="GET" action="{{ url_for('admin_manage_grades') }}" style="margin-top: 15px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                <div>
+                    <label for="lop">Chọn Lớp:</label>
+                    <select name="lop" id="lop" required>
+                        <option value="">-- Vui lòng chọn --</option>
+                        {% for lop in danh_sach_lop %}
+                            <option value="{{ lop }}" {% if lop == selected_lop %}selected{% endif %}>{{ lop }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="ma_mh">Chọn Môn học:</label>
+                    <select name="ma_mh" id="ma_mh" required>
+                        <option value="">-- Vui lòng chọn --</option>
+                        {% for mh in danh_sach_mon_hoc %}
+                             <option value="{{ mh.ma_mh }}" {% if mh.ma_mh == selected_mh_id %}selected{% endif %}>{{ mh.ten_mh }} ({{ mh.ma_mh }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <input type="submit" value="Xem Điểm">
+                </div>
+            </div>
+        </form>
+
+        {% if selected_lop and selected_mon_hoc %}
+            <hr style="margin: 30px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                 <h3 style="margin-bottom: 10px;">Bảng điểm chi tiết - Lớp: {{ selected_lop }} - Môn: {{ selected_mon_hoc.ten_mh }}</h3>
+                 <a href="{{ url_for('admin_enter_grades', lop=selected_lop, ma_mh=selected_mh_id) }}" class="btn">
+                     <i class="fa-solid fa-pen-to-square"></i> Sửa điểm lớp này
+                 </a>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã SV</th>
+                        <th>Họ tên</th>
+                        <th style="text-align: center;">Điểm CC</th>
+                        <th style="text-align: center;">Điểm GK</th>
+                        <th style="text-align: center;">Điểm CK</th>
+                        <th style="text-align: center;">Điểm TK (10)</th>
+                        <th style="text-align: center;">Điểm Chữ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grade_row in grades_data %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ grade_row.ma_sv }}</td>
+                        <td>{{ grade_row.ho_ten }}</td>
+                        <td style="text-align: center;">{{ grade_row.diem_chuyen_can if grade_row.diem_chuyen_can is not none else '-' }}</td>
+                        <td style="text-align: center;">{{ grade_row.diem_giua_ky if grade_row.diem_giua_ky is not none else '-' }}</td>
+                        <td style="text-align: center;">{{ grade_row.diem_cuoi_ky if grade_row.diem_cuoi_ky is not none else '-' }}</td>
+                        <td style="text-align: center; font-weight: bold;">
+                             {{ "%.2f"|format(grade_row.diem_tong_ket) if grade_row.diem_tong_ket is not none else '-' }}
+                        </td>
+                        <td style="text-align: center; font-weight: bold;">
+                             {{ grade_row.diem_chu if grade_row.diem_chu else '-' }}
+                        </td>
+                    </tr>
+                    {% else %}
+                     <tr>
+                         <td colspan="8">Chưa có dữ liệu điểm cho lớp và môn học này.</td>
+                     </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        </div> </div> {% endblock %}

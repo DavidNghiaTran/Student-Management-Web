@@ -3,126 +3,121 @@
 {% block title %}Bảng điểm & GPA{% endblock %}
 
 {% block content %}
-    <h2>Bảng điểm cá nhân</h2>
-    
-    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-        <div style="padding: 15px; background-color: #f4f4f4; border-radius: 8px;">
-            <h3 style="margin: 0 0 5px 0;">GPA (Hệ 10) </h3>
-            <strong style="font-size: 2em; color: #0275d8;">{{ "%.2f"|format(gpa_10) }}</strong>
+<div class="card">
+    <div class="card-header">Bảng điểm chi tiết & Điểm trung bình</div>
+    <div class="card-body">
+
+        <h3 style="margin-bottom: 10px;">GPA Tích lũy (Toàn khóa)</h3>
+        <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 2px solid var(--primary-color);">
+             <div style="padding: 15px; background-color: #f4f4f4; border-radius: 8px;">
+                <h4 style="margin: 0 0 5px 0;">GPA Tích lũy (Hệ 10)</h4>
+                <strong style="font-size: 2em; color: #0275d8;">{{ "%.2f"|format(gpa_10_cumulative) }}</strong>
+            </div>
+            <div style="padding: 15px; background-color: #f4f4f4; border-radius: 8px;">
+                <h4 style="margin: 0 0 5px 0;">GPA Tích lũy (Hệ 4)</h4>
+                <strong style="font-size: 2em; color: #5cb85c;">{{ "%.2f"|format(gpa_4_cumulative) }}</strong>
+            </div>
         </div>
-        <div style="padding: 15px; background-color: #f4f4f4; border-radius: 8px;">
-            <h3 style="margin: 0 0 5px 0;">GPA (Hệ 4) - Mới</h3>
-            <strong style="font-size: 2em; color: #5cb85c;">{{ "%.2f"|format(gpa_4) }}</strong>
-        </div>
-    </div>
-    
-    <hr style="margin: 25px 0;">
 
-    <h2>Biểu đồ điểm (Tất cả các môn)</h2>
-    <p>
-        <strong>Lưu ý:</strong> Mô hình CSDL hiện tại không lưu trữ thông tin "Học kỳ", 
-        vì vậy biểu đồ này hiển thị điểm của <strong>tất cả</strong> các môn đã học.
-    </p>
-    <div style="max-width: 900px; margin: auto;">
-        <canvas id="gradesChart"></canvas>
-    </div>
+        <h3 style="margin-top: 20px;">Chi tiết điểm các môn theo Học kỳ</h3>
+        
+        {% if not semesters_data %}
+            <p>Bạn chưa có dữ liệu điểm.</p>
+        {% endif %}
 
-    <hr style="margin: 25px 0;">
+        {% for hoc_ky, ky_data in semesters_data | dictsort %}
+            <div class="semester-group" style="margin-bottom: 30px;">
+                <h4 style="padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd; border-bottom: none; font-size: 1.1em; display: flex; justify-content: space-between; align-items: center;">
+                    <span>HỌC KỲ {{ hoc_ky }}</span>
+                    <span style="font-size: 0.9em; font-weight: 500;">
+                        (GPA Kỳ - Hệ 10: <strong style="color: #0275d8;">{{ "%.2f"|format(ky_data.gpa_10) }}</strong> | 
+                         GPA Kỳ - Hệ 4: <strong style="color: #5cb85c;">{{ "%.2f"|format(ky_data.gpa_4) }}</strong>)
+                    </span>
+                </h4>
+                
+                <table class="data-table" style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="vertical-align: middle;">STT</th>
+                            <th rowspan="2" style="vertical-align: middle;">Mã môn học</th>
+                            <th rowspan="2" style="vertical-align: middle;">Tên môn học</th>
+                            <th rowspan="2" style="vertical-align: middle; text-align: center;">Số TC</th>
+                            <th colspan="3" style="text-align: center;">Điểm thành phần</th>
+                            <th colspan="2" style="text-align: center;">Kết quả</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 80px; text-align: center;">CC (20%)</th>
+                            <th style="width: 80px; text-align: center;">GK (20%)</th>
+                            <th style="width: 80px; text-align: center;">CK (60%)</th>
+                            <th style="width: 80px; text-align: center;">Điểm 10</th>
+                            <th style="width: 80px; text-align: center;">Điểm Chữ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in ky_data.grades %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ row.ma_mh }}</td>
+                            <td>{{ row.ten_mh }}</td>
+                            <td style="text-align: center;">{{ row.so_tin_chi }}</td>
+                            <td style="text-align: center;">{{ row.diem_cc if row.diem_cc is not none else '-' }}</td>
+                            <td style="text-align: center;">{{ row.diem_gk if row.diem_gk is not none else '-' }}</td>
+                            <td style="text-align: center;">{{ row.diem_ck if row.diem_ck is not none else '-' }}</td>
+                            <td style="text-align: center; font-weight: bold;">
+                                {{ "%.2f"|format(row.diem_tk) if row.diem_tk is not none else '-' }}
+                            </td>
+                            <td style="text-align: center; font-weight: bold;">
+                                {{ row.diem_chu if row.diem_chu else '-' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endfor %}
+        
+        {% if chart_labels %}
+        <hr style="margin: 30px 0;">
+        <h2>Biểu đồ điểm tổng kết (Tất cả các môn)</h2>
+         <div style="max-width: 900px; margin: 20px auto 0 auto; height: 350px;">
+             <canvas id="gradesChart"></canvas>
+         </div>
+         {% endif %}
 
-    <h2>Chi tiết điểm </h2>
-    <table>
-        <thead>
-            <tr>
-                <th>STT</th>
-                <th>Mã môn học</th>
-                <th>Tên môn học</th>
-                <th>Số tín chỉ</th>
-                <th>Điểm thi (10)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in results %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ row.ma_mh }}</td>
-                <td>{{ row.ten_mh }}</td>
-                <td>{{ row.so_tin_chi }}</td>
-                <td><strong>{{ row.diem_thi }}</strong></td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="5">Bạn chưa có điểm thi.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    </div> </div>
 
+{% if chart_labels %}
 <script>
-    // Chờ cho trang tải xong
-    document.addEventListener('DOMContentLoaded', function() {
-        
-        // Lấy dữ liệu (Mã môn & Điểm) mà app.py đã truyền sang
-        // Dùng |tojson để chuyển list Python thành mảng JavaScript an toàn
-        const labels = {{ chart_labels | tojson }};
-        const data = {{ chart_data | tojson }};
+document.addEventListener('DOMContentLoaded', function() {
+    const labels = {{ chart_labels | tojson | safe }};
+    const data = {{ chart_data | tojson | safe }};
+    const ctx = document.getElementById('gradesChart')?.getContext('2d');
 
-        // Lấy thẻ canvas
-        const ctx = document.getElementById('gradesChart').getContext('2d');
-        
-        // Tạo biểu đồ
+    if (ctx && data.length > 0) {
         new Chart(ctx, {
-            type: 'bar', // Loại: Biểu đồ cột
+            type: 'bar',
             data: {
-                labels: labels, // Trục hoành (Mã môn)
+                labels: labels, // Bây giờ sẽ là "HK1-MA101", "HK2-MA102"...
                 datasets: [{
-                    label: 'Điểm hệ 10', // Chú thích
-                    data: data, // Trục tung (Điểm 10)
-                    backgroundColor: 'rgba(2, 117, 216, 0.7)', // Màu cột
-                    borderColor: 'rgba(2, 117, 216, 1)',
+                    label: 'Điểm tổng kết (hệ 10)',
+                    data: data,
+                    backgroundColor: 'rgba(183, 28, 28, 0.7)',
+                    borderColor: 'rgba(183, 28, 28, 1)',
                     borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
                 scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Mã Môn học' // Trục hoành
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        max: 10, // Giới hạn trục tung là 10
-                        title: {
-                            display: true,
-                            text: 'Điểm (Hệ 10)' // Trục tung
-                        }
-                    }
+                     x: { title: { display: true, text: 'Mã Môn học (Theo Học kỳ)' } },
+                     y: { beginAtZero: true, max: 10, title: { display: true, text: 'Điểm tổng kết (Hệ 10)' } }
                 },
-                plugins: {
-                    legend: {
-                        display: false // Ẩn chú thích 'Điểm hệ 10' ở trên
-                    },
-                    tooltip: {
-                         // Hiển thị thêm Tên môn khi di chuột vào
-                         callbacks: {
-                            title: function(tooltipItems) {
-                                // Lấy index của cột được di chuột vào
-                                const index = tooltipItems[0].dataIndex;
-                                // Lấy tên môn học từ list 'results' (cần truyền thêm)
-                                // Tạm thời dùng Mã môn
-                                return 'Môn: ' + labels[index];
-                            },
-                            label: function(context) {
-                                return 'Điểm: ' + context.parsed.y;
-                            }
-                        }
-                    }
-                }
+                plugins: { legend: { display: false } }
             }
         });
-    });
+    }
+});
 </script>
+{% endif %}
 {% endblock %}

@@ -19,13 +19,27 @@
         gap: 20px;
         padding-bottom: 0; /* Xóa padding dưới nếu không cần */
     }
-    .student-avatar img {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%; /* Ảnh tròn */
-        border: 3px solid #eee;
-        object-fit: cover; /* Đảm bảo ảnh không bị méo */
-    }
+  <style>
+.student-avatar {
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.student-avatar img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+    object-position: center;
+    border-radius: 50%;
+    display: block;
+}
+</style>
+
+
     .student-details ul {
         list-style: none;
         padding-left: 0;

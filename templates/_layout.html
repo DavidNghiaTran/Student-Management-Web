@@ -328,6 +328,7 @@
             }
         }
     </style>
+    
 </head>
 <body>
 
@@ -369,58 +370,74 @@
 
         <aside class="sidebar-right">
 
-            {% if current_user.is_authenticated %}
-                
-                <div class="sidebar-group">
-                    <h3 class="sidebar-header">Tài khoản</h3>
-                    <div class="sidebar-content">
-                        <strong>Tài khoản:</strong> {{ current_user.username }}<br>
-                        <strong>Họ tên:</strong> {{ current_user.sinh_vien.ho_ten if current_user.sinh_vien else 'Giáo vụ' }}<br>
-                        <strong>Vai trò:</strong> {{ 'Sinh viên' if current_user.vai_tro.value == 'SINHVIEN' else 'Giáo viên' }}
-                    </div>
-                    <nav class="sidebar-nav">
-                        <a href="{{ url_for('logout') }}" class="logout-link">
-                            <i class="fa-solid fa-right-from-bracket"></i>
-                            Đăng xuất
-                        </a>
-                    </nav>
-                </div>
+    {% if current_user.is_authenticated %}
+        
+        <div class="sidebar-group">
+            <h3 class="sidebar-header">Tài khoản</h3>
+            <div class="sidebar-content">
+                <strong>Tài khoản:</strong> {{ current_user.username }}<br>
 
-                <div class="sidebar-group">
-                    <h3 class="sidebar-header">Tính năng</h3>
-                    <nav class="sidebar-nav">
-                    {% if current_user.vai_tro.value == 'SINHVIEN' %}
-                        <a href="{{ url_for('student_dashboard') }}"><i class="fa-solid fa-bell"></i> Thông báo</a>
-                        <a href="{{ url_for('student_profile') }}"><i class="fa-solid fa-user-pen"></i> Thông tin cá nhân</a>
-                        <a href="#"><i class="fa-solid fa-book-open"></i> Chương trình học</a>
-                        <a href="{{ url_for('student_grades') }}"><i class="fa-solid fa-chart-simple"></i> Xem điểm & GPA</a>
-                        <a href="#"><i class="fa-solid fa-calendar-days"></i> Xem lịch học</a>
-                        <a href="#"><i class="fa-solid fa-file-pen"></i> Đăng ký môn học</a>
-                    {% elif current_user.vai_tro.value == 'GIAOVIEN' %}
-                        <a href="{{ url_for('admin_dashboard') }}"><i class="fa-solid fa-chart-pie"></i> Thống kê chung</a>
-                        <a href="{{ url_for('admin_manage_students') }}"><i class="fa-solid fa-users"></i> Quản lý Sinh viên</a>
-                        <a href="{{ url_for('admin_import_students') }}"><i class="fa-solid fa-file-excel"></i> Nhập Sinh viên (Excel)</a>
-                        <a href="{{ url_for('admin_manage_courses') }}"><i class="fa-solid fa-book"></i> Quản lý Môn học</a>
-                        <a href="{{ url_for('admin_manage_grades') }}"><i class="fa-solid fa-pen-to-square"></i> Quản lý Điểm</a>
-                        <a href="{{ url_for('admin_export_grades') }}"><i class="fa-solid fa-file-export"></i> Xuất điểm (Excel)</a>
-                        <a href="{{ url_for('admin_reports_index') }}"><i class="fa-solid fa-chart-bar"></i> Báo cáo & Thống kê</a>
-                        <a href="{{ url_for('admin_send_notification') }}"><i class="fa-solid fa-paper-plane"></i> Gửi Thông báo</a>
-                    {% endif %}
-                    </nav>
-                </div>
+                <strong>Họ tên:</strong> 
+                        {% if current_user.sinh_vien %}
+                            {{ current_user.sinh_vien.ho_ten }}
+                        {% elif current_user.giao_vien %}
+                            {{ current_user.giao_vien.ho_ten }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                        <br>
 
-            {% else %}
+                <strong>Vai trò:</strong> {{ 'Sinh viên' if current_user.vai_tro.value == 'SINHVIEN' else 'Giáo viên' }}
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('logout') }}" class="logout-link">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Đăng xuất
+                </a>
+            </nav>
+        </div>
 
-                <div class="sidebar-group">
-                    <h3 class="sidebar-header">Đăng nhập</h3>
-                    <div class="sidebar-content">
-                        <p>Vui lòng đăng nhập tại trang chính để sử dụng các tính năng.</p>
-                    </div>
-                </div>
+        <div class="sidebar-group">
+            <h3 class="sidebar-header">Tính năng</h3>
+            <nav class="sidebar-nav">
+            {% if current_user.vai_tro.value == 'SINHVIEN' %}
+                <a href="{{ url_for('student_dashboard') }}"><i class="fa-solid fa-bell"></i> Thông báo</a>
+                <a href="{{ url_for('student_profile') }}"><i class="fa-solid fa-user-pen"></i> Thông tin cá nhân</a>
+                <a href="#"><i class="fa-solid fa-book-open"></i> Chương trình học</a>
+                <a href="{{ url_for('student_grades') }}"><i class="fa-solid fa-chart-simple"></i> Xem điểm & GPA</a>
+                <a href="#"><i class="fa-solid fa-calendar-days"></i> Xem lịch học</a>
+                <a href="#"><i class="fa-solid fa-file-pen"></i> Đăng ký môn học</a>
+            {% elif current_user.vai_tro.value == 'GIAOVIEN' %}
+           
 
-            {% endif %}
 
-        </aside>
+<a href="{{ url_for('thong_bao_chung') }}">🔔 Thông báo chung</a>
+
+                   <a href="{{ url_for('admin_dashboard') }}"><i class="fa-solid fa-bell"></i> Thông báo chung</a>
+                    <a href="{{ url_for('admin_manage_students') }}"><i class="fa-solid fa-users"></i> Quản lý Sinh viên</a>
+                    <a href="{{ url_for('admin_import_students') }}"><i class="fa-solid fa-file-excel"></i> Nhập Sinh viên (Excel)</a>
+                    <a href="{{ url_for('admin_manage_courses') }}"><i class="fa-solid fa-book"></i> Quản lý Môn học</a>
+                    <a href="{{ url_for('admin_manage_grades') }}"><i class="fa-solid fa-pen-to-square"></i> Quản lý Điểm</a>
+                    <a href="{{ url_for('admin_export_grades') }}" class="nav-link"><i class="fa-solid fa-file-export"></i> Xuất điểm (Excel)</a>
+                    <a href="{{ url_for('admin_reports_index') }}"><i class="fa-solid fa-chart-bar"></i> Báo cáo & Thống kê</a>
+                    <a href="{{ url_for('admin_send_notification') }}"><i class="fa-solid fa-paper-plane"></i> Gửi Thông báo</a>
+                {% endif %}
+            </nav>
+        </div>
+
+    {% else %}
+
+        <div class="sidebar-group">
+            <h3 class="sidebar-header">Đăng nhập</h3>
+            <div class="sidebar-content">
+                <p>Vui lòng đăng nhập tại trang chính để sử dụng các tính năng.</p>
+            </div>
+        </div>
+
+    {% endif %}
+
+</aside>
+
 
     </div>
 

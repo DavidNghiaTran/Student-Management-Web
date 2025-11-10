@@ -1,14 +1,75 @@
 {% extends "_layout.html" %}
 
-{% block title %}Trang quản trị{% endblock %}
+{% block title %}Thông báo chung{% endblock %}
+
+{% block styles %}
+<style>
+    .notification-list {
+        max-height: 500px; /* Tăng chiều cao cho admin */
+        overflow-y: auto;
+    }
+    .notification-item {
+        border-bottom: 1px dashed #eee;
+        padding: 12px 0;
+    }
+    .notification-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+     }
+     .notification-item:first-child {
+        padding-top: 0;
+     }
+    .notification-item a {
+        text-decoration: none;
+        color: var(--primary-color);
+        font-weight: 500;
+        font-size: 1.1rem; /* Cho to hơn 1 chút */
+        display: block;
+        margin-bottom: 4px;
+    }
+     .notification-item a:hover {
+        text-decoration: underline;
+     }
+    .notification-item small {
+        color: #777;
+        font-size: 0.9rem;
+     }
+     .notification-item p.content { /* Nội dung thông báo */
+        margin-top: 8px;
+        font-size: 0.95rem;
+        color: #333;
+        line-height: 1.6;
+        padding-left: 10px;
+        border-left: 3px solid #eee;
+     }
+</style>
+{% endblock %}
+
 
 {% block content %}
-    <h2>Chào mừng, {{ current_user.username }} (Giáo viên)</h2>
-    <p>Đây là trang quản trị hệ thống.</p>
-    
-    <h3>Thống kê nhanh:</h3>
-    <ul>
-        <li>Tổng số Sinh viên: <strong>{{ total_sv }}</strong></li>
-        <li>Tổng số Môn học: <strong>{{ total_mh }}</strong></li>
-    </ul>
+<div class="card">
+    <div class="card-header">
+        Thông báo chung
+    </div>
+    <div class="card-body notification-list">
+        {% if announcements %}
+            {% for msg in announcements %}
+            <div class="notification-item">
+                <a href="#">{{ msg.tieu_de }}</a>
+                <small>
+                    Gửi bởi: <strong>{{ msg.ma_gv }}</strong> | 
+                    Ngày: {{ msg.ngay_gui.strftime('%d-%m-%Y %H:%M') }} |
+                    Gửi đến Lớp: <strong>{{ msg.lop_nhan }}</strong>
+                </small>
+                <p class="content">
+                    {{ msg.noi_dung | safe }}
+                </p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>Không có thông báo nào.</p>
+        {% endif %}
+    </div>
+</div>
+
 {% endblock %}

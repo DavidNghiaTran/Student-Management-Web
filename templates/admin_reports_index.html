@@ -3,29 +3,35 @@
 {% block title %}Báo cáo & Thống kê{% endblock %}
 
 {% block content %}
-    <h2>Báo cáo & Thống kê </h2>
-    <p>Chọn một báo cáo để xem:</p>
-    
-    <ul style="line-height: 1.8;">
-        <li>
-            <a href="{{ url_for('admin_report_high_gpa') }}">
-                Báo cáo 1: Danh sách sinh viên có GPA (thang 10) > 8.0
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('admin_report_missing_grade') }}">
-                Báo cáo 2: Liệt kê sinh viên chưa thi một môn học
-            </a>
-        </li>
-        <li>
-            <a href="{{ url_for('admin_report_class_gpa') }}">
-                Báo cáo 3: Thống kê điểm trung bình (GPA) theo Lớp
-            </a>
-        </li>
-        <li>
-            <a href="#" style="color: #888;">
-                Báo cáo 4: Biểu đồ phân bố điểm (Nâng cao - Chưa thực hiện)
-            </a>
-        </li>
-    </ul>
+<div class="card">
+    <div class="card-header">
+        Báo cáo & Thống kê
+    </div>
+    <div class="card-body">
+        <p>Chọn một báo cáo để xem:</p>
+        
+        <ul style="line-height: 2;">
+            <li>
+                <a href="{{ url_for('admin_report_high_gpa') }}">
+                    Báo cáo 1: Danh sách sinh viên có GPA (thang 10) > 8.0
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin_report_missing_grade') }}">
+                    Báo cáo 2: Liệt kê sinh viên chưa thi một môn học
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin_report_class_gpa') }}">
+                    Báo cáo 3: Thống kê điểm trung bình (GPA) theo Lớp
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin_report_score_distribution') }}">
+                    Báo cáo 4: Biểu đồ phân bố điểm (Theo điểm chữ)
+                </a>
+                </li>
+        </ul>
+    </div>
+</div>
 {% endblock %}

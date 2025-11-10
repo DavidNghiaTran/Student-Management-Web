@@ -3,34 +3,47 @@
 {% block title %}Cập nhật Sinh viên{% endblock %}
 
 {% block content %}
-    <h2>Cập nhật Sinh viên: {{ sv.ho_ten }} ({{ sv.ma_sv }})</h2>
-    <p>Lưu ý: Bạn không thể sửa Mã Sinh viên. </p>
+<div class="card">
+    <div class="card-header">
+         <a href="{{ url_for('admin_manage_students') }}" style="text-decoration: none; color: var(--primary-color); float: right; font-size: 0.9em;">&laquo; Quay lại Danh sách</a>
+         Cập nhật Sinh viên: {{ sv.ho_ten }} ({{ sv.ma_sv }})
+    </div>
+    <div class="card-body">
+        <p>Lưu ý: Bạn không thể sửa Mã Sinh viên.</p>
 
-    <form method="POST" action="{{ url_for('admin_edit_student', ma_sv=sv.ma_sv) }}">
-        <p>
-            <label>Mã Sinh viên:</label>
-            <input type="text" name="ma_sv" value="{{ sv.ma_sv }}" disabled>
-        </p>
-        <p>
-            <label>Họ tên:</label>
-            <input type="text" name="ho_ten" value="{{ sv.ho_ten }}" required>
-        </p>
-        <p>
-            <label>Ngày sinh (YYYY-MM-DD):</label>
-            <input type="date" name="ngay_sinh" value="{{ sv.ngay_sinh.strftime('%Y-%m-%d') }}" required>
-        </p>
-        <p>
-            <label>Lớp:</label>
-            <input type="text" name="lop" value="{{ sv.lop }}">
-        </p>
-        <p>
-            <label>Khoa:</label>
-            <input type="text" name="khoa" value="{{ sv.khoa }}">
-        </p>
-        <p>
-            <input type="submit" value="Lưu thay đổi">
-        </p>
-    </form>
-    
-    <a href="{{ url_for('admin_manage_students') }}">Quay lại danh sách</a>
-{% endblock %}
+        <form method="POST" action="{{ url_for('admin_edit_student', ma_sv=sv.ma_sv) }}">
+            <div style="margin-bottom: 15px;">
+                <label>Mã Sinh viên:</label>
+                <input type="text" name="ma_sv" value="{{ sv.ma_sv }}" disabled>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="ho_ten">Họ tên:</label>
+                <input type="text" name="ho_ten" id="ho_ten" value="{{ sv.ho_ten or '' }}" required>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="ngay_sinh">Ngày sinh (YYYY-MM-DD):</label>
+                <input type="date" name="ngay_sinh" id="ngay_sinh" value="{{ sv.ngay_sinh.strftime('%Y-%m-%d') if sv.ngay_sinh else '' }}">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="lop">Lớp:</label>
+                <input type="text" name="lop" id="lop" value="{{ sv.lop or '' }}">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="khoa">Khoa:</label>
+                <input type="text" name="khoa" id="khoa" value="{{ sv.khoa or '' }}">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label for="email">Email:</label>
+                <input type="text" name="email" id="email" value="{{ sv.email or '' }}">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="location">Địa chỉ (Location):</label>
+                <input type="text" name="location" id="location" value="{{ sv.location or '' }}">
+            </div>
+            <div>
+                <input type="submit" value="Lưu thay đổi">
+            </div>
+        </form>
+
+    </div> </div> {% endblock %}

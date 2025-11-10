@@ -11,7 +11,8 @@
             <tr>
                 <th>Mã Môn học</th>
                 <th>Tên Môn học</th>
-                <th>Số tín chỉ</th>
+                <th style="width: 80px; text-align: center;">Học kỳ</th>
+                <th style="width: 80px; text-align: center;">Số tín chỉ</th>
                 <th style="width: 150px;">Hành động</th> </tr>
         </thead>
         <tbody>
@@ -19,7 +20,8 @@
             <tr>
                 <td>{{ course.ma_mh }}</td>
                 <td>{{ course.ten_mh }}</td>
-                <td>{{ course.so_tin_chi }}</td>
+                <td style="text-align: center;">{{ course.hoc_ky }}</td>
+                <td style="text-align: center;">{{ course.so_tin_chi }}</td>
                 
                 <td class="action-buttons">
                     <a href="{{ url_for('admin_edit_course', ma_mh=course.ma_mh) }}" class="btn btn-edit">Sửa</a>
