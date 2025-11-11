@@ -469,11 +469,36 @@ def student_grades():
 @login_required
 @role_required(VaiTroEnum.GIAOVIEN) 
 def admin_dashboard():
-    # Logic mới: Lấy 15 thông báo mới nhất (tất cả các thông báo)
+    """Trang mặc định cho giáo viên - luôn hiển thị danh sách Thông báo chung."""
     announcements = ThongBao.query.order_by(ThongBao.ngay_gui.desc()).limit(15).all()
-    
-    # Gửi danh sách thông báo ra template
-    return render_template('admin_dashboard.html', announcements=announcements)
+
+    notifications = []
+    has_real_announcements = bool(announcements)
+
+    if has_real_announcements:
+        notifications = [
+            {
+                "title": tb.tieu_de,
+                "date": tb.ngay_gui.strftime('%d/%m/%Y'),
+                "link": None  # Có thể bổ sung link chi tiết riêng cho admin nếu cần
+            }
+            for tb in announcements
+        ]
+    else:
+        for n in ptit_notifications:
+            notifications.append(
+                {
+                    "title": n["title"],
+                    "date": n["date"],
+                    "link": url_for('thong_bao_chung_detail', id=n["id"])
+                }
+            )
+
+    return render_template(
+        'admin_dashboard.html',
+        notifications=notifications,
+        has_real_announcements=has_real_announcements
+    )
 
 @app.route('/admin/profile', methods=['GET', 'POST'])
 @login_required

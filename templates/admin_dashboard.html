@@ -5,69 +5,73 @@
 {% block styles %}
 <style>
     .notification-list {
-        max-height: 500px; /* Tăng chiều cao cho admin */
+        max-height: 500px;
         overflow-y: auto;
     }
-    .notification-item {
-        border-bottom: 1px dashed #eee;
+    .notifications-table {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .notifications-table li {
         padding: 12px 0;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
     }
-    .notification-item:last-child {
+    .notifications-table li:last-child {
         border-bottom: none;
-        padding-bottom: 0;
-     }
-     .notification-item:first-child {
-        padding-top: 0;
-     }
-    .notification-item a {
-        text-decoration: none;
-        color: var(--primary-color);
-        font-weight: 500;
-        font-size: 1.1rem; /* Cho to hơn 1 chút */
-        display: block;
-        margin-bottom: 4px;
     }
-     .notification-item a:hover {
+    .notifications-table a,
+    .notifications-table span.title-only {
+        color: #b71c1c;
+        text-decoration: none;
+        font-weight: 600;
+        flex: 1;
+        font-size: 1rem;
+    }
+    .notifications-table a:hover {
         text-decoration: underline;
-     }
-    .notification-item small {
-        color: #777;
+    }
+    .notifications-table span.date {
+        color: #888;
         font-size: 0.9rem;
-     }
-     .notification-item p.content { /* Nội dung thông báo */
-        margin-top: 8px;
-        font-size: 0.95rem;
-        color: #333;
-        line-height: 1.6;
-        padding-left: 10px;
-        border-left: 3px solid #eee;
-     }
+        white-space: nowrap;
+    }
 </style>
 {% endblock %}
 
 
 {% block content %}
 <div class="card">
-    <div class="card-header">
-        Thông báo chung
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>📢 <strong>Thông báo từ Phòng Giáo vụ</strong></span>
     </div>
+
     <div class="card-body notification-list">
-        {% if announcements %}
-            {% for msg in announcements %}
-            <div class="notification-item">
-                <a href="#">{{ msg.tieu_de }}</a>
-                <small>
-                    Gửi bởi: <strong>{{ msg.ma_gv }}</strong> | 
-                    Ngày: {{ msg.ngay_gui.strftime('%d-%m-%Y %H:%M') }} |
-                    Gửi đến Lớp: <strong>{{ msg.lop_nhan }}</strong>
-                </small>
-                <p class="content">
-                    {{ msg.noi_dung | safe }}
-                </p>
-            </div>
-            {% endfor %}
+        {% if notifications %}
+            <ul class="notifications-table">
+                {% for msg in notifications %}
+                <li>
+                    {% if msg.link %}
+                        <a href="{{ msg.link }}">{{ msg.title }}</a>
+                    {% else %}
+                        <span class="title-only">{{ msg.title }}</span>
+                    {% endif %}
+                    <span class="date">{{ msg.date }}</span>
+                </li>
+                {% endfor %}
+            </ul>
         {% else %}
             <p>Không có thông báo nào.</p>
+        {% endif %}
+
+        {% if not has_real_announcements %}
+            <p style="margin-top:10px; color:#888; font-size:0.85rem;">
+                
+            </p>
         {% endif %}
     </div>
 </div>
