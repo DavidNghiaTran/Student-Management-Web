@@ -6,39 +6,36 @@
 <style>
     .dashboard-grid {
         display: grid;
-        /* Tạo 2 cột, cột đầu tiên chiếm ít không gian hơn cho ảnh */
         grid-template-columns: auto 1fr;
         gap: 20px;
-        align-items: start; /* Căn các card theo đầu */
+        align-items: start;
     }
 
-    /* Thẻ thông tin SV */
     .student-info-card {
         display: flex;
-        align-items: center; /* Căn giữa ảnh và text */
+        align-items: center;
         gap: 20px;
-        padding-bottom: 0; /* Xóa padding dưới nếu không cần */
+        padding-bottom: 0;
     }
-  <style>
-.student-avatar {
-    width: 20px !important;
-    height: 20px !important;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid #eee;
-    background-color: #f9f9f9;
-}
 
-.student-avatar img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain;
-    object-position: center;
-    border-radius: 50%;
-    display: block;
-}
-</style>
+    .student-avatar {
+        flex: 0 0 auto;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid #eee;
+        background-color: #f9f9f9;
+    }
 
+    .student-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center;
+        border-radius: 50%;
+        display: block;
+    }
 
     .student-details ul {
         list-style: none;
@@ -52,9 +49,8 @@
         color: #555;
     }
 
-    /* Thẻ thông báo */
     .notification-list {
-        max-height: 300px; /* Giới hạn chiều cao, thêm thanh cuộn nếu cần */
+        max-height: 300px;
         overflow-y: auto;
     }
     .notification-item {
@@ -64,41 +60,39 @@
     .notification-item:last-child {
         border-bottom: none;
         padding-bottom: 0;
-     }
-     .notification-item:first-child {
+    }
+    .notification-item:first-child {
         padding-top: 0;
-     }
+    }
     .notification-item a {
         text-decoration: none;
-        color: var(--primary-color); /* Sử dụng màu đỏ từ layout */
+        color: var(--primary-color);
         font-weight: 500;
         font-size: 1rem;
-        display: block; /* Cho link chiếm cả dòng */
+        display: block;
         margin-bottom: 4px;
     }
-     .notification-item a:hover {
+    .notification-item a:hover {
         text-decoration: underline;
-     }
+    }
     .notification-item small {
         color: #777;
         font-size: 0.85rem;
-     }
-     .notification-item p.content { /* Thêm style cho nội dung nếu cần */
+    }
+    .notification-item p.content {
         margin-top: 5px;
         font-size: 0.9rem;
         color: #444;
-     }
+    }
 
-
-    /* Responsive cho Grid */
-    @media (max-width: 992px) { /* Chuyển thành 1 cột sớm hơn */
+    @media (max-width: 992px) {
         .dashboard-grid {
-            grid-template-columns: 1fr; /* 1 cột */
+            grid-template-columns: 1fr;
         }
     }
-     @media (max-width: 576px) { /* Style cho mobile */
+    @media (max-width: 576px) {
         .student-info-card {
-            flex-direction: column; /* Xếp ảnh trên text */
+            flex-direction: column;
             align-items: flex-start;
         }
     }

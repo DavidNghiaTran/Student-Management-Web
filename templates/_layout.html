@@ -328,6 +328,7 @@
             }
         }
     </style>
+    {% block styles %}{% endblock %}
     
 </head>
 <body>
@@ -411,7 +412,7 @@
            
 
 
-<a href="{{ url_for('thong_bao_chung') }}">🔔 Thông báo chung</a>
+                    <a href="{{ url_for('thong_bao_chung') }}"><i class="fa-solid fa-bell"></i> Thông báo chung</a>
 
                    
                     <a href="{{ url_for('admin_manage_students') }}"><i class="fa-solid fa-users"></i> Quản lý Sinh viên</a>
