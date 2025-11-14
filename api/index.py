@@ -1807,7 +1807,3 @@ def thong_bao_chung_detail(id):
     # Tắt debug khi deploy thực tế
     # Bật debug=True để xem lỗi và để server tự khởi động lại khi sửa code
     app.run(host='0.0.0.0', port=5000, debug=True)
-from vercel_wsgi import handle
-
-def handler(event, context):
-    return handle(app, event, context)
