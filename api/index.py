@@ -357,18 +357,21 @@ def student_dashboard():
     # Lấy điểm và tạo dữ liệu biểu đồ
     results = db.session.query(
         MonHoc.ma_mh,
-        MonHoc.ten_mh,
-        MonHoc.so_tin_chi,
+        KetQua.diem_tong_ket,
         KetQua.diem_chu
- 
     ).join(
         KetQua, MonHoc.ma_mh == KetQua.ma_mh
     ).filter(
         KetQua.ma_sv == ma_sv
     ).order_by(MonHoc.ma_mh).all()
 
-    chart_labels = [row.ma_mh for row in results]
-    chart_data = [row.diem_chu for row in results]
+    chart_points = [
+        (row.ma_mh, float(row.diem_tong_ket))
+        for row in results
+        if row.diem_tong_ket is not None
+    ]
+    chart_labels = [label for label, _ in chart_points]
+    chart_data = [score for _, score in chart_points]
 
     # Lấy thông báo
     notifications = []
