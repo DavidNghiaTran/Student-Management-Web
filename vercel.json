@@ -2,18 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.py", // Đường dẫn đến file Flask chính
+      "src": "api/index.py", 
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/static/(.*)", // Định tuyến cho file tĩnh
+      "src": "/static/(.*)", 
       "dest": "/static/$1"
     },
     {
-      "src": "/(.*)", // Tất cả các yêu cầu khác
-      "dest": "api/index.py" // Chuyển đến file Flask
+      "src": "/(.*)", 
+      "dest": "api/index.py" 
     }
   ]
 }
