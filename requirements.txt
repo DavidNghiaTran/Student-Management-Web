@@ -5,3 +5,4 @@ Flask-Login
 Flask-Bcrypt
 pandas
 openpyxl
+vercel-wsgi
