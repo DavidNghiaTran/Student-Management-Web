@@ -1,0 +1,511 @@
+{% extends "_layout.html" %}
+
+{% block title %}Quản lý Giảng viên{% endblock %}
+
+{% block styles %}
+<style>
+    .teacher-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04));
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 30px 60px rgba(8,15,40,0.35);
+        border-radius: 28px;
+        padding: 32px;
+    }
+    .teacher-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+    }
+    .teacher-header .title {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .teacher-header .title span.icon {
+        font-size: 2rem;
+        line-height: 1;
+    }
+    .teacher-header h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        color: #0a0a0a;
+    }
+    .teacher-header p {
+        margin: 0;
+        color: rgba(255,255,255,0.7);
+    }
+    .teacher-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        background: rgba(99,102,241,0.2);
+        color: #e0e7ff;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+    }
+    .teacher-manager-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(320px, 1.2fr);
+        gap: 28px;
+        align-items: stretch;
+    }
+    .teacher-panel {
+        background: rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 22px 24px 26px;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .teacher-panel h3 {
+        margin-bottom: 12px;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #f1f5ff;
+    }
+    .teacher-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+    .teacher-actions .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .teacher-actions .action-buttons button,
+    .teacher-actions .action-buttons a {
+        flex: 1 1 140px;
+        border: none;
+        border-radius: 16px;
+        padding: 12px 14px;
+        background: rgba(79,70,229,0.15);
+        color: #e0e7ff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, background 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-decoration: none;
+    }
+    .teacher-actions .action-buttons button:hover,
+    .teacher-actions .action-buttons a:hover {
+        transform: translateY(-2px);
+        background: rgba(99,102,241,0.3);
+    }
+    .collapsible-panel {
+        display: none;
+        animation: fadeSlide 0.3s ease forwards;
+    }
+    .collapsible-panel.is-open {
+        display: block;
+    }
+    .collapsible-panel form {
+        margin-top: 14px;
+    }
+    .teacher-table-wrapper {
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: linear-gradient(180deg, rgba(15,23,42,0.85), rgba(15,23,42,0.65));
+        max-height: 420px;
+        overflow: auto;
+    }
+    .teacher-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #f8fafc;
+        font-size: 0.95rem;
+    }
+    .teacher-table th {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 14px 18px;
+        background: rgba(148,163,255,0.08);
+        color: #c7d2fe;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    .teacher-table td {
+        padding: 14px 18px;
+        border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .teacher-table tbody tr:nth-child(even) {
+        background: rgba(255,255,255,0.02);
+    }
+    .teacher-table tbody tr:hover {
+        background: rgba(59,130,246,0.16);
+    }
+    .teacher-form form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .teacher-form label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: rgba(255,255,255,0.75);
+    }
+    .teacher-form input,
+    .teacher-form select {
+        border-radius: 16px;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.9);
+        border: 1px solid rgba(15,23,42,0.15);
+        color: #111;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .teacher-form input::placeholder {
+        color: rgba(17,17,17,0.65);
+    }
+    .teacher-form input:focus,
+    .teacher-form select:focus {
+        border-color: rgba(99,102,241,0.7);
+        box-shadow: 0 0 0 4px rgba(79,70,229,0.25);
+        outline: none;
+    }
+    .teacher-form small {
+        color: rgba(255,255,255,0.65);
+        margin-bottom: 10px;
+        display: block;
+        font-size: 0.9rem;
+    }
+    .teacher-form input[type="submit"] {
+        margin-top: 8px;
+        align-self: flex-start;
+        background: linear-gradient(120deg, #f97316, #ec4899);
+        border: none;
+        padding: 12px 28px;
+        border-radius: 999px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        box-shadow: 0 18px 35px rgba(236,72,153,0.35);
+    }
+    .teacher-empty {
+        padding: 32px;
+        border: 1px dashed rgba(255,255,255,0.25);
+        border-radius: 18px;
+        text-align: center;
+        color: rgba(255,255,255,0.8);
+        font-size: 0.95rem;
+    }
+    .teacher-self-section {
+        margin-top: 32px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 24px;
+        padding: 30px;
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .teacher-self-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-bottom: 22px;
+    }
+    .teacher-self-header h3 {
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #f8fafc;
+        font-size: 1.05rem;
+    }
+    .teacher-self-header p {
+        margin: 4px 0 0;
+        color: rgba(248,250,252,0.7);
+        font-size: 0.95rem;
+    }
+    .teacher-self-header .link-profile {
+        padding: 12px 20px;
+        border-radius: 999px;
+        background: linear-gradient(120deg, #38bdf8, #6366f1);
+        color: #0f172a;
+        font-weight: 600;
+        text-decoration: none;
+        box-shadow: 0 12px 25px rgba(14,165,233,0.35);
+    }
+    .teacher-info-section + .teacher-info-section {
+        margin-top: 26px;
+    }
+    .teacher-info-section h4 {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.9rem;
+        margin-bottom: 14px;
+        color: rgba(248,250,252,0.65);
+    }
+    .teacher-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+    .teacher-info-card {
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: rgba(15,23,42,0.65);
+        border: 1px solid rgba(255,255,255,0.08);
+        min-height: 120px;
+    }
+    .teacher-info-card span.label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(248,250,252,0.55);
+        display: block;
+        margin-bottom: 6px;
+    }
+    .teacher-info-card p.value {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #f8fafc;
+        word-break: break-word;
+    }
+    .teacher-avatar-block {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: center;
+    }
+    .teacher-avatar-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 20px;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,0.2);
+        background: rgba(15,23,42,0.6);
+    }
+    .teacher-avatar-info {
+        flex: 1;
+    }
+    @media (max-width: 992px) {
+        .teacher-manager-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 640px) {
+        .teacher-info-grid {
+            grid-template-columns: 1fr;
+        }
+        .teacher-self-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .teacher-self-header .link-profile {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="teacher-card">
+    <div class="teacher-header">
+        <div class="title">
+            <span class="icon">👩‍🏫</span>
+            <div>
+                <h2>Quản lý Giảng viên</h2>
+                <p>Theo dõi danh bạ và mở nhanh tài khoản mới cho giảng viên.</p>
+            </div>
+        </div>
+        <span class="teacher-count">
+            <i class="fa-solid fa-users"></i>
+            <strong>{{ teacher_count }}</strong> Giảng viên
+        </span>
+    </div>
+
+    <div class="teacher-manager-grid">
+        <div class="teacher-panel teacher-list">
+            <h3>Danh sách hiện có</h3>
+            {% if teachers %}
+                <div class="teacher-table-wrapper">
+                    <table class="teacher-table">
+                        <thead>
+                            <tr>
+                                <th>Mã GV</th>
+                                <th>Họ tên</th>
+                                <th>Khoa / Bộ môn</th>
+                                <th>Email</th>
+                                <th>SĐT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for teacher in teachers %}
+                            <tr>
+                                <td>{{ teacher.ma_gv }}</td>
+                                <td>{{ teacher.ho_ten or 'Chưa cập nhật' }}</td>
+                                <td>{{ teacher.khoa_bo_mon or '-' }}</td>
+                                <td>{{ teacher.email or '—' }}</td>
+                                <td>{{ teacher.so_dien_thoai or '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="teacher-empty">
+                    Chưa có giảng viên nào trong hệ thống. Hãy thêm tài khoản mới ở bảng bên cạnh.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="teacher-panel teacher-actions">
+            <h3>Tính năng</h3>
+            <div class="action-buttons">
+                <button type="button" data-toggle-panel="#create-teacher-panel">
+                    <i class="fa-solid fa-user-plus"></i> Thêm giảng viên
+                </button>
+                <a href="#my-teacher-info">
+                    <i class="fa-solid fa-id-card"></i> Thông tin của tôi
+                </a>
+            </div>
+
+            <div id="create-teacher-panel" class="collapsible-panel">
+                <small>Mật khẩu mặc định sẽ là <code>ma_gv@123</code>. Bạn có thể đặt mật khẩu khác bên dưới.</small>
+                <form method="POST" action="{{ url_for('admin_create_teacher') }}">
+                    <label for="ma_gv">Mã giảng viên *</label>
+                    <input type="text" id="ma_gv" name="ma_gv" placeholder="vd: gvptit01" required>
+
+                    <label for="ho_ten">Họ tên *</label>
+                    <input type="text" id="ho_ten" name="ho_ten" required>
+
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="name@ptit.edu.vn">
+
+                    <label for="so_dien_thoai">Số điện thoại</label>
+                    <input type="text" id="so_dien_thoai" name="so_dien_thoai">
+
+                    <label for="khoa_bo_mon">Khoa / Bộ môn</label>
+                    <input type="text" id="khoa_bo_mon" name="khoa_bo_mon" list="teacher-departments" placeholder="vd: Công nghệ thông tin">
+                    <datalist id="teacher-departments">
+                        {% for dept in teacher_departments %}
+                            <option value="{{ dept }}">
+                        {% endfor %}
+                    </datalist>
+
+                    <label for="password">Mật khẩu tùy chọn</label>
+                    <input type="text" id="password" name="password" placeholder="Để trống để dùng mật khẩu mặc định">
+
+                    <input type="submit" value="Thêm giảng viên">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="my-teacher-info" class="teacher-panel teacher-self-section">
+        <div class="teacher-self-header">
+            <div>
+                <h3>Thông tin giảng viên của tôi</h3>
+                <p>Dữ liệu được đồng bộ trực tiếp từ bảng giao_vien. Vui lòng cập nhật đầy đủ để đồng nghiệp tìm thấy bạn.</p>
+            </div>
+            <a href="{{ url_for('admin_profile') }}" class="link-profile">
+                <i class="fa-solid fa-pen-to-square"></i> Cập nhật chi tiết
+            </a>
+        </div>
+
+        <div class="teacher-info-section">
+            <h4>1. Thông tin cơ bản</h4>
+            <div class="teacher-info-grid">
+                <div class="teacher-info-card">
+                    <span class="label">Mã giảng viên (PK/FK)</span>
+                    <p class="value">{{ my_teacher.ma_gv }}</p>
+                </div>
+                <div class="teacher-info-card">
+                    <span class="label">Họ tên</span>
+                    <p class="value">{{ my_teacher.ho_ten or 'Chưa cập nhật' }}</p>
+                </div>
+                <div class="teacher-info-card">
+                    <span class="label">Ngày sinh</span>
+                    <p class="value">{{ my_teacher.ngay_sinh.strftime('%d/%m/%Y') if my_teacher.ngay_sinh else '—' }}</p>
+                </div>
+                <div class="teacher-info-card">
+                    <span class="label">Giới tính</span>
+                    <p class="value">{{ my_teacher.gioi_tinh or '—' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="teacher-info-section">
+            <h4>2. Thông tin học thuật & chuyên môn</h4>
+            <div class="teacher-info-grid">
+                <div class="teacher-info-card">
+                    <span class="label">Khoa / Bộ môn</span>
+                    <p class="value">{{ my_teacher.khoa_bo_mon or '—' }}</p>
+                </div>
+                <div class="teacher-info-card">
+                    <span class="label">Học vị</span>
+                    <p class="value">{{ my_teacher.hoc_vi or '—' }}</p>
+                </div>
+                <div class="teacher-info-card">
+                    <span class="label">Chức vụ</span>
+                    <p class="value">{{ my_teacher.chuc_vu or '—' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="teacher-info-section">
+            <h4>3. Thông tin liên hệ</h4>
+            <div class="teacher-info-grid">
+                <div class="teacher-info-card">
+                    <span class="label">Email công vụ</span>
+                    <p class="value">{{ my_teacher.email or '—' }}</p>
+                </div>
+                <div class="teacher-info-card">
+                    <span class="label">Số điện thoại</span>
+                    <p class="value">{{ my_teacher.so_dien_thoai or '—' }}</p>
+                </div>
+                <div class="teacher-info-card">
+                    <span class="label">Văn phòng làm việc</span>
+                    <p class="value">{{ my_teacher.van_phong or '—' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="teacher-info-section">
+            <h4>4. Thông tin hiển thị</h4>
+            <div class="teacher-info-grid">
+                <div class="teacher-info-card teacher-avatar-block">
+                    {% set avatar_src = my_teacher.avatar_url or url_for('static', filename='images/avatar_default.png') %}
+                    <img src="{{ avatar_src }}" alt="Ảnh đại diện" class="teacher-avatar-preview" onerror="this.style.visibility='hidden'">
+                    <div class="teacher-avatar-info">
+                        <span class="label">Ảnh đại diện</span>
+                        <p class="value">{{ my_teacher.avatar_url or 'Chưa cấu hình' }}</p>
+                        <small style="color: rgba(248,250,252,0.6); display:block; margin-top:6px;">Thay đổi đường dẫn để đồng bộ với thư viện ảnh của hệ thống.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('[data-toggle-panel]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        const target = document.querySelector(this.getAttribute('data-toggle-panel'));
+        if (!target) return;
+        const isOpen = target.classList.contains('is-open');
+        document.querySelectorAll('.collapsible-panel').forEach(function(panel) {
+            if (panel !== target) {
+                panel.classList.remove('is-open');
+            }
+        });
+        target.classList.toggle('is-open', !isOpen);
+    });
+});
+</script>
+{% endblock %}

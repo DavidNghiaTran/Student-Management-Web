@@ -55,7 +55,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
 from sqlalchemy.sql import func, case, literal_column
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, text, inspect as sa_inspect
+from sqlalchemy.exc import NoSuchTableError
 from functools import wraps
 
 # --- 1. CẤU HÌNH ỨNG DỤNG ---
@@ -78,6 +79,39 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 
 login_manager.login_view = 'login'
+
+
+def ensure_teacher_profile_columns():
+    """Ensure new optional teacher columns exist for older SQLite databases."""
+    try:
+        inspector = sa_inspect(db.engine)
+        existing_columns = {col['name'] for col in inspector.get_columns('giao_vien')}
+    except NoSuchTableError:
+        return
+
+    statements = []
+
+    def add_if_missing(column_name, ddl):
+        if column_name not in existing_columns:
+            statements.append(ddl)
+
+    add_if_missing('van_phong', "ALTER TABLE giao_vien ADD COLUMN van_phong VARCHAR(120)")
+    add_if_missing('avatar_url', "ALTER TABLE giao_vien ADD COLUMN avatar_url VARCHAR(255)")
+    add_if_missing('khoa_bo_mon', "ALTER TABLE giao_vien ADD COLUMN khoa_bo_mon VARCHAR(120)")
+    add_if_missing('hoc_vi', "ALTER TABLE giao_vien ADD COLUMN hoc_vi VARCHAR(100)")
+
+    if not statements:
+        return
+
+    for ddl in statements:
+        try:
+            db.session.execute(text(ddl))
+        except Exception as exc:
+            db.session.rollback()
+            print(f"[Schema update] Could not apply '{ddl}': {exc}")
+            return
+
+    db.session.commit()
 login_manager.login_message = 'Vui lòng đăng nhập để truy cập trang này.'
 login_manager.login_message_category = 'info'
 
@@ -142,12 +176,13 @@ class GiaoVien(db.Model):
     so_dien_thoai = db.Column(db.String(20), nullable=True)
     email = db.Column(db.String(150), unique=True, nullable=True)
     dia_chi = db.Column(db.String(255), nullable=True)
-    anh_dai_dien = db.Column(db.String(255), nullable=True)
+    van_phong = db.Column(db.String(120), nullable=True)
+    avatar_url = db.Column(db.String(255), nullable=True)
 
     # 2. Thông tin chuyên môn
-    bo_mon_khoa = db.Column(db.String(100), nullable=True)
+    khoa_bo_mon = db.Column(db.String(120), nullable=True)
+    hoc_vi = db.Column(db.String(100), nullable=True)
     chuc_vu = db.Column(db.String(100), nullable=True)
-    trinh_do_hoc_van = db.Column(db.String(100), nullable=True)
     linh_vuc = db.Column(db.Text, nullable=True)
     mon_hoc_phu_trach = db.Column(db.Text, nullable=True) 
     so_nam_kinh_nghiem = db.Column(db.Integer, nullable=True)
@@ -239,6 +274,18 @@ class ThongBao(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return TaiKhoan.query.get(user_id)
+
+
+_TEACHER_SCHEMA_PATCHED = False
+
+
+@app.before_request
+def apply_schema_patches():
+    global _TEACHER_SCHEMA_PATCHED
+    if _TEACHER_SCHEMA_PATCHED:
+        return
+    ensure_teacher_profile_columns()
+    _TEACHER_SCHEMA_PATCHED = True
 
 def role_required(vai_tro_enum):
     def decorator(f):
@@ -500,6 +547,112 @@ def admin_dashboard():
         has_real_announcements=has_real_announcements
     )
 
+@app.route('/admin/teachers')
+@login_required
+@role_required(VaiTroEnum.GIAOVIEN)
+def admin_manage_teachers():
+    teachers = GiaoVien.query.order_by(GiaoVien.ho_ten.asc()).all()
+    departments = sorted({gv.khoa_bo_mon for gv in teachers if gv.khoa_bo_mon})
+
+    my_teacher = current_user.giao_vien
+    if not my_teacher:
+        my_teacher = GiaoVien.query.get(current_user.username)
+    if not my_teacher:
+        my_teacher = GiaoVien(
+            ma_gv=current_user.username,
+            ho_ten=current_user.username,
+            email=f"{current_user.username}@ptit.edu.vn"
+        )
+        db.session.add(my_teacher)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    return render_template(
+        'admin_manage_teachers.html',
+        teachers=teachers,
+        teacher_departments=departments,
+        teacher_count=len(teachers),
+        my_teacher=my_teacher
+    )
+
+@app.route('/admin/teachers/create', methods=['POST'])
+@login_required
+@role_required(VaiTroEnum.GIAOVIEN)
+def admin_create_teacher():
+    ma_gv = (request.form.get('ma_gv') or '').strip()
+    ho_ten = (request.form.get('ho_ten') or '').strip()
+    email = (request.form.get('email') or '').strip() or None
+    so_dien_thoai = (request.form.get('so_dien_thoai') or '').strip() or None
+    khoa_bo_mon = (request.form.get('khoa_bo_mon') or '').strip() or None
+    password = (request.form.get('password') or '').strip() or None
+
+    if not ma_gv or not ho_ten:
+        flash('Mã giảng viên và Họ tên là bắt buộc.', 'danger')
+        return redirect(url_for('admin_manage_teachers'))
+
+    if TaiKhoan.query.get(ma_gv):
+        flash('Mã giảng viên đã tồn tại.', 'danger')
+        return redirect(url_for('admin_manage_teachers'))
+
+    default_password = password or f"{ma_gv}@123"
+
+    new_account = TaiKhoan(username=ma_gv, vai_tro=VaiTroEnum.GIAOVIEN)
+    new_account.set_password(default_password)
+
+    new_teacher = GiaoVien(
+        ma_gv=ma_gv,
+        ho_ten=ho_ten,
+        email=email,
+        so_dien_thoai=so_dien_thoai,
+        khoa_bo_mon=khoa_bo_mon
+    )
+
+    db.session.add(new_account)
+    db.session.add(new_teacher)
+
+    try:
+        db.session.commit()
+        flash(f'Tạo tài khoản giảng viên {ma_gv} thành công. Mật khẩu mặc định: {default_password}', 'success')
+    except Exception as e:
+        db.session.rollback()
+        if 'UNIQUE constraint failed: giao_vien.email' in str(e):
+            flash('Email này đã được sử dụng bởi một giảng viên khác.', 'danger')
+        else:
+            flash(f'Lỗi khi tạo tài khoản giảng viên: {e}', 'danger')
+
+    return redirect(url_for('admin_manage_teachers'))
+
+@app.route('/admin/teachers/update-self', methods=['POST'])
+@login_required
+@role_required(VaiTroEnum.GIAOVIEN)
+def admin_update_teacher_self():
+    gv = current_user.giao_vien
+    if not gv:
+        gv = GiaoVien.query.get(current_user.username)
+
+    if not gv:
+        flash('Không tìm thấy hồ sơ giảng viên của bạn.', 'danger')
+        return redirect(url_for('admin_manage_teachers'))
+
+    gv.ho_ten = request.form.get('ho_ten') or gv.ho_ten
+    gv.email = request.form.get('email') or gv.email
+    gv.so_dien_thoai = request.form.get('so_dien_thoai') or gv.so_dien_thoai
+    gv.khoa_bo_mon = request.form.get('khoa_bo_mon') or gv.khoa_bo_mon
+
+    try:
+        db.session.commit()
+        flash('Cập nhật thông tin của bạn thành công!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        if 'UNIQUE constraint failed: giao_vien.email' in str(e):
+            flash('Email này đã được sử dụng bởi một giảng viên khác.', 'danger')
+        else:
+            flash(f'Lỗi khi cập nhật thông tin: {e}', 'danger')
+
+    return redirect(url_for('admin_manage_teachers'))
+
 @app.route('/admin/profile', methods=['GET', 'POST'])
 @login_required
 @role_required(VaiTroEnum.GIAOVIEN)
@@ -531,12 +684,14 @@ def admin_profile():
             gv.so_dien_thoai = request.form.get('so_dien_thoai')
             gv.email = request.form.get('email')
             gv.dia_chi = request.form.get('dia_chi')
+            gv.van_phong = request.form.get('van_phong')
+            gv.avatar_url = request.form.get('avatar_url')
             # (Chúng ta sẽ bỏ qua phần tải lên ảnh đại diện cho đơn giản)
             
             # 2. Cập nhật thông tin chuyên môn
-            gv.bo_mon_khoa = request.form.get('bo_mon_khoa')
+            gv.khoa_bo_mon = request.form.get('khoa_bo_mon')
+            gv.hoc_vi = request.form.get('hoc_vi')
             gv.chuc_vu = request.form.get('chuc_vu')
-            gv.trinh_do_hoc_van = request.form.get('trinh_do_hoc_van')
             gv.linh_vuc = request.form.get('linh_vuc')
             gv.mon_hoc_phu_trach = request.form.get('mon_hoc_phu_trach')
             gv.so_nam_kinh_nghiem = int(request.form.get('so_nam_kinh_nghiem')) if request.form.get('so_nam_kinh_nghiem') else None
@@ -858,19 +1013,21 @@ def admin_enter_grades(lop, ma_mh):
         mon_hoc=mon_hoc,
         danh_sach_nhap_diem=danh_sach_nhap_diem
     )
+# === THAY THẾ HÀM admin_save_grades CŨ BẰNG HÀM NÀY ===
 @app.route('/admin/grades/save', methods=['POST'])
 @login_required
 @role_required(VaiTroEnum.GIAOVIEN)
 def admin_save_grades():
     try:
         ma_mh = request.form.get('ma_mh')
+        lop = request.form.get('lop') # Lấy lại để redirect
         updated_count = 0
         created_count = 0
-        processed_students = set() # Dùng để tránh xử lý trùng SV nếu form gửi nhiều lần
 
         # Dữ liệu form sẽ có dạng: diem_cc_MaSV, diem_gk_MaSV, diem_ck_MaSV
         scores_by_sv = {} # Gom điểm của từng SV vào dict
 
+        # 1. Gom điểm từ form vào dict
         for key, value in request.form.items():
             if key.startswith('diem_'):
                 parts = key.split('_')
@@ -881,47 +1038,55 @@ def admin_save_grades():
                     if ma_sv not in scores_by_sv:
                         scores_by_sv[ma_sv] = {'cc': None, 'gk': None, 'ck': None}
 
-                    # Validate và chuyển đổi điểm
+                    # === PHẦN SỬA LỖI QUAN TRỌNG ===
                     try:
-                        # Chỉ xử lý nếu value không rỗng
-                        if value.strip():
-                            score_float = float(value)
+                        # Chỉ xử lý nếu 'value' (giá trị nhập vào) không rỗng
+                        if value.strip(): 
+                            score_float = float(value) # LẤY GIÁ TRỊ TỪ 'value', KHÔNG PHẢI 'key'
                             if not (0 <= score_float <= 10):
-                                raise ValueError("Điểm không hợp lệ")
-                            # Chỉ lưu điểm hợp lệ
+                                raise ValueError("Điểm không hợp lệ 0-10")
+                            
                             if score_type in scores_by_sv[ma_sv]:
                                  scores_by_sv[ma_sv][score_type] = score_float
-                        # Nếu value rỗng, giữ nguyên là None
-                        # else:
-                        #     scores_by_sv[ma_sv][score_type] = None # Giữ None nếu ô trống
-
-                    except ValueError:
+                        # Nếu value rỗng, nó sẽ giữ nguyên là None (đã khởi tạo)
+                        
+                    except (ValueError, TypeError):
+                        # Báo lỗi bằng 'value'
                         flash(f'Lỗi: Điểm "{value}" ({score_type}) của SV {ma_sv} không hợp lệ. Giá trị này sẽ bị bỏ qua.', 'warning')
-                        # Không lưu giá trị không hợp lệ, giữ nguyên None hoặc giá trị cũ
+                    # === KẾT THÚC SỬA LỖI ===
 
-        # Xử lý từng sinh viên
+        # 2. Xử lý và lưu vào CSDL
         for ma_sv, scores in scores_by_sv.items():
+            
+            # Kiểm tra sinh viên có tồn tại không
+            student_exists = SinhVien.query.get(ma_sv)
+            if not student_exists:
+                flash(f"Lỗi: Mã SV '{ma_sv}' không tồn tại. Bỏ qua.", 'danger')
+                continue # Bỏ qua sinh viên này
+
             existing_grade = KetQua.query.get((ma_sv, ma_mh))
 
-            if existing_grade:
-                # UPDATE: Chỉ update các điểm được gửi lên và hợp lệ
-                changed = False
-                if scores['cc'] is not None and existing_grade.diem_chuyen_can != scores['cc']:
-                    existing_grade.diem_chuyen_can = scores['cc']
-                    changed = True
-                if scores['gk'] is not None and existing_grade.diem_giua_ky != scores['gk']:
-                    existing_grade.diem_giua_ky = scores['gk']
-                    changed = True
-                if scores['ck'] is not None and existing_grade.diem_cuoi_ky != scores['ck']:
-                    existing_grade.diem_cuoi_ky = scores['ck']
-                    changed = True
+            # Bỏ qua nếu cả 3 ô đều trống (và chưa có bản ghi)
+            if all(v is None for v in scores.values()) and not existing_grade:
+                continue
 
-                # Tính lại điểm tổng kết và điểm chữ nếu có thay đổi
+            if existing_grade:
+                # UPDATE: Cập nhật các điểm được gửi lên
+                changed = False
+                # Chỉ cập nhật nếu điểm mới (từ form) là một con số
+                if scores['cc'] is not None and existing_grade.diem_chuyen_can != scores['cc']:
+                    existing_grade.diem_chuyen_can = scores['cc']; changed = True
+                if scores['gk'] is not None and existing_grade.diem_giua_ky != scores['gk']:
+                    existing_grade.diem_giua_ky = scores['gk']; changed = True
+                if scores['ck'] is not None and existing_grade.diem_cuoi_ky != scores['ck']:
+                    existing_grade.diem_cuoi_ky = scores['ck']; changed = True
+
+                # TÍNH LẠI ĐIỂM (THEO YÊU CẦU CỦA BẠN)
                 if changed:
-                    existing_grade.calculate_final_score()
+                    existing_grade.calculate_final_score() # Tự động tính lại TK 10 và Chữ
                     updated_count += 1
             else:
-                # INSERT: Tạo bản ghi mới chỉ với các điểm được cung cấp
+                # INSERT: Tạo bản ghi mới
                 new_grade = KetQua(
                     ma_sv=ma_sv,
                     ma_mh=ma_mh,
@@ -929,8 +1094,8 @@ def admin_save_grades():
                     diem_giua_ky=scores['gk'],
                     diem_cuoi_ky=scores['ck']
                 )
-                # Tính điểm tổng kết và điểm chữ
-                new_grade.calculate_final_score()
+                # TÍNH ĐIỂM LẦN ĐẦU (THEO YÊU CẦU CỦA BẠN)
+                new_grade.calculate_final_score() # Tự động tính TK 10 và Chữ
                 db.session.add(new_grade)
                 created_count += 1
 
@@ -940,19 +1105,19 @@ def admin_save_grades():
         else:
             flash('Không có thay đổi nào về điểm được lưu.', 'info')
 
-        return redirect(url_for('admin_manage_grades'))
+        # Quay lại đúng trang nhập điểm đó
+        return redirect(url_for('admin_enter_grades', lop=lop, ma_mh=ma_mh))
 
     except Exception as e:
         db.session.rollback()
         flash(f'Đã xảy ra lỗi nghiêm trọng khi lưu điểm: {e}', 'danger')
-        # Trả về trang chọn lớp/môn ban đầu nếu có lỗi
-        lop = request.form.get('lop') # Cần lấy lại lop, mh để redirect về trang nhập điểm
+        lop = request.form.get('lop')
         ma_mh = request.form.get('ma_mh')
         if lop and ma_mh:
              return redirect(url_for('admin_enter_grades', lop=lop, ma_mh=ma_mh))
         else:
              return redirect(url_for('admin_manage_grades'))
-
+# ========================================================
 # 4.6. Báo cáo & Thống kê
 # === THAY THẾ HÀM calculate_gpa_expression CŨ ===
 def calculate_gpa_expression():
@@ -1610,7 +1775,8 @@ def thong_bao_chung_detail(id):
 if __name__ == '__main__':
     with app.app_context():
         # Tạo tất cả các bảng nếu chưa tồn tại
-        db.create_all() 
+        db.create_all()
+        ensure_teacher_profile_columns()
         
         # === CẬP NHẬT LOGIC TẠO TÀI KHOẢN MẪU ===
         if not TaiKhoan.query.filter_by(username='giaovien01').first():
@@ -1628,7 +1794,7 @@ if __name__ == '__main__':
                 ma_gv='giaovien01',
                 ho_ten='Giáo vụ (Mặc định)',
                 email='giaovien01@ptit.edu.vn', # Email mẫu
-                bo_mon_khoa='Phòng Giáo vụ'
+                khoa_bo_mon='Phòng Giáo vụ'
             )
             db.session.add(admin_profile)
             

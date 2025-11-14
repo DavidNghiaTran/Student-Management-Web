@@ -3,75 +3,91 @@
 {% block title %}Nhập/Sửa điểm{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">Quản lý Điểm thi - Nhập/Sửa điểm chi tiết</div>
+<div class="card fade-in">
+    <div class="card-header">
+        <div>Quản lý Điểm thi - Nhập/Sửa điểm chi tiết</div>
+    </div>
     <div class="card-body">
-        <p>
-            <strong>Lớp:</strong> {{ lop }} <br>
-            <strong>Môn học:</strong> {{ mon_hoc.ten_mh }} ({{ mon_hoc.ma_mh }})
+
+        <div class="info-pills">
+            <span class="pill">
+                <i class="fa-solid fa-layer-group"></i>
+                Lớp: {{ lop }}
+            </span>
+            <span class="pill">
+                <i class="fa-solid fa-book-open"></i>
+                Môn: {{ mon_hoc.ten_mh }} ({{ mon_hoc.ma_mh }})
+            </span>
+        </div>
+
+        <p class="helper-text accent">
+            Nhập điểm thành phần (thang 10). Điểm tổng kết &amp; điểm chữ sẽ tự động tính khi đủ 3 cột điểm. Bỏ trống nếu chưa có.
         </p>
-        <p>Nhập điểm thành phần (thang 10). Điểm tổng kết và điểm chữ sẽ tự động tính khi đủ 3 điểm. Bỏ trống ô nếu chưa có điểm.</p>
 
-        <form method="POST" action="{{ url_for('admin_save_grades') }}">
-
+        <form method="POST" action="{{ url_for('admin_save_grades') }}" class="grade-form">
             <input type="hidden" name="lop" value="{{ lop }}">
             <input type="hidden" name="ma_mh" value="{{ mon_hoc.ma_mh }}">
 
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th rowspan="2" style="vertical-align: middle;">Mã SV</th>
-                        <th rowspan="2" style="vertical-align: middle;">Họ tên</th>
-                        <th colspan="3" style="text-align: center;">Điểm thành phần (Nhập)</th>
-                        <th colspan="2" style="text-align: center;">Kết quả (Tự động tính)</th>
-                    </tr>
-                     <tr>
-                        <th style="width: 100px; text-align: center;">Chuyên cần (20%)</th>
-                        <th style="width: 100px; text-align: center;">Giữa kỳ (20%)</th>
-                        <th style="width: 100px; text-align: center;">Cuối kỳ (60%)</th>
-                        <th style="width: 100px; text-align: center;">Tổng kết (10)</th>
-                        <th style="width: 80px; text-align: center;">Điểm chữ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for sv in danh_sach_nhap_diem %}
-                    <tr>
-                        <td>{{ sv.ma_sv }}</td>
-                        <td>{{ sv.ho_ten }}</td>
-                        <td style="padding: 5px;">
-                            <input type="number"
-                                   name="diem_cc_{{ sv.ma_sv }}"
-                                   value="{{ sv.diem_cc if sv.diem_cc is not none else '' }}"
-                                   min="0" max="10" step="0.1" style="width: 90%; margin: 0 auto; display: block; padding: 8px;">
-                        </td>
-                         <td style="padding: 5px;">
-                             <input type="number"
-                                   name="diem_gk_{{ sv.ma_sv }}"
-                                   value="{{ sv.diem_gk if sv.diem_gk is not none else '' }}"
-                                   min="0" max="10" step="0.1" style="width: 90%; margin: 0 auto; display: block; padding: 8px;">
-                        </td>
-                         <td style="padding: 5px;">
-                             <input type="number"
-                                   name="diem_ck_{{ sv.ma_sv }}"
-                                   value="{{ sv.diem_ck if sv.diem_ck is not none else '' }}"
-                                   min="0" max="10" step="0.1" style="width: 90%; margin: 0 auto; display: block; padding: 8px;">
-                        </td>
-                        <td style="text-align: center; font-weight: bold;">
-                           {{ "%.2f"|format(sv.diem_tk) if sv.diem_tk is not none else '-' }}
-                        </td>
-                        <td style="text-align: center; font-weight: bold;">
-                            {{ sv.diem_chu if sv.diem_chu else '-' }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <p style="margin-top: 20px;">
-                <input type="submit" value="Lưu tất cả thay đổi"> </p>
-        </form>
+            <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Mã SV</th>
+                            <th rowspan="2">Họ tên</th>
+                            <th colspan="3" style="text-align: center;">Điểm thành phần (Nhập)</th>
+                            <th colspan="2" style="text-align: center;">Kết quả (Tự động tính)</th>
+                        </tr>
+                        <tr>
+                            <th style="text-align: center;">Chuyên cần (20%)</th>
+                            <th style="text-align: center;">Giữa kỳ (20%)</th>
+                            <th style="text-align: center;">Cuối kỳ (60%)</th>
+                            <th style="text-align: center;">Tổng kết (10)</th>
+                            <th style="text-align: center;">Điểm chữ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sv in danh_sach_nhap_diem %}
+                        <tr>
+                            <td>{{ sv.ma_sv }}</td>
+                            <td>{{ sv.ho_ten }}</td>
+                            <td>
+                                <input type="number"
+                                       name="diem_cc_{{ sv.ma_sv }}"
+                                       value="{{ sv.diem_cc if sv.diem_cc is not none else '' }}"
+                                       min="0" max="10" step="any">
+                            </td>
+                            <td>
+                                <input type="number"
+                                       name="diem_gk_{{ sv.ma_sv }}"
+                                       value="{{ sv.diem_gk if sv.diem_gk is not none else '' }}"
+                                       min="0" max="10" step="any">
+                            </td>
+                            <td>
+                                <input type="number"
+                                       name="diem_ck_{{ sv.ma_sv }}"
+                                       value="{{ sv.diem_ck if sv.diem_ck is not none else '' }}"
+                                       min="0" max="10" step="any">
+                            </td>
+                            <td style="text-align: center; font-weight: bold;">
+                                {{ "%.2f"|format(sv.diem_tk) if sv.diem_tk is not none else '-' }}
+                            </td>
+                            <td style="text-align: center; font-weight: bold;">
+                                {{ sv.diem_chu if sv.diem_chu else '-' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
 
-        <hr style="margin: 25px 0;">
-        <a href="{{ url_for('admin_manage_grades') }}">&laquo; Quay lại trang Quản lý điểm</a>
+            <div class="form-actions">
+                <input type="submit" value="Lưu tất cả thay đổi">
+                <a href="{{ url_for('admin_manage_grades') }}" class="link-back">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Quay lại trang Quản lý điểm
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

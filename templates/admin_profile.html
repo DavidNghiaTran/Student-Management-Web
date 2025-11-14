@@ -12,19 +12,16 @@
 
         <form method="POST" action="{{ url_for('admin_profile') }}">
             
-            <h3 style="margin-top: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">1. Thông tin cá nhân cơ bản</h3>
+            <h3 style="margin-top: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">1. Thông tin cơ bản</h3>
             
             <div style="margin-bottom: 15px;">
                 <label>Mã Giáo viên:</label>
                 <input type="text" name="ma_gv" value="{{ gv.ma_gv }}" disabled>
+                <small style="display: block; color: #666;">Khóa chính (PK) đồng thời là khóa ngoại liên kết 1-1 với tài khoản đăng nhập (giống SinhVien.ma_sv).</small>
             </div>
             <div style="margin-bottom: 15px;">
                 <label for="ho_ten">Họ tên:</label>
                 <input type="text" name="ho_ten" id="ho_ten" value="{{ gv.ho_ten or '' }}" required>
-            </div>
-            <div style="margin-bottom: 15px;">
-                <label for="email">Email (Dùng cho liên lạc):</label>
-                <input type="text" name="email" id="email" value="{{ gv.email or '' }}">
             </div>
             <div style="display: flex; gap: 20px;">
                 <div style="margin-bottom: 15px; flex: 1;">
@@ -41,31 +38,23 @@
                     </select>
                 </div>
             </div>
-            <div style="margin-bottom: 15px;">
-                <label for="so_dien_thoai">Số điện thoại:</label>
-                <input type="text" name="so_dien_thoai" id="so_dien_thoai" value="{{ gv.so_dien_thoai or '' }}">
-            </div>
-            <div style="margin-bottom: 15px;">
-                <label for="dia_chi">Địa chỉ liên lạc:</label>
-                <input type="text" name="dia_chi" id="dia_chi" value="{{ gv.dia_chi or '' }}">
-            </div>
 
-            <h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">2. Thông tin chuyên môn - công tác</h3>
+            <h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">2. Thông tin Học thuật & Chuyên môn</h3>
 
             <div style="display: flex; gap: 20px;">
                 <div style="margin-bottom: 15px; flex: 1;">
-                    <label for="bo_mon_khoa">Bộ môn / Khoa:</label>
-                    <input type="text" name="bo_mon_khoa" id="bo_mon_khoa" value="{{ gv.bo_mon_khoa or '' }}">
+                    <label for="khoa_bo_mon">Khoa / Bộ môn:</label>
+                    <input type="text" name="khoa_bo_mon" id="khoa_bo_mon" value="{{ gv.khoa_bo_mon or '' }}">
                 </div>
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="hoc_vi">Học vị:</label>
+                    <input type="text" name="hoc_vi" id="hoc_vi" value="{{ gv.hoc_vi or '' }}">
+                </div>
+            </div>
+            <div style="display: flex; gap: 20px;">
                 <div style="margin-bottom: 15px; flex: 1;">
                     <label for="chuc_vu">Chức vụ:</label>
                     <input type="text" name="chuc_vu" id="chuc_vu" value="{{ gv.chuc_vu or '' }}">
-                </div>
-            </div>
-             <div style="display: flex; gap: 20px;">
-                <div style="margin-bottom: 15px; flex: 1;">
-                    <label for="trinh_do_hoc_van">Trình độ học vấn:</label>
-                    <input type="text" name="trinh_do_hoc_van" id="trinh_do_hoc_van" value="{{ gv.trinh_do_hoc_van or '' }}">
                 </div>
                 <div style="margin-bottom: 15px; flex: 1;">
                     <label for="so_nam_kinh_nghiem">Số năm kinh nghiệm:</label>
@@ -76,9 +65,39 @@
                 <label for="linh_vuc">Lĩnh vực giảng dạy / nghiên cứu:</label>
                 <textarea name="linh_vuc" id="linh_vuc" rows="3" style="width: 100%;">{{ gv.linh_vuc or '' }}</textarea>
             </div>
-             <div style="margin-bottom: 15px;">
-                <label for="mon_hoc_phu_trach">Môn học phụ trách (Liệt kê, cách nhau bằng dấu phẩy):</label>
+            <div style="margin-bottom: 15px;">
+                <label for="mon_hoc_phu_trach">Môn học phụ trách (liệt kê, cách nhau bằng dấu phẩy):</label>
                 <textarea name="mon_hoc_phu_trach" id="mon_hoc_phu_trach" rows="3" style="width: 100%;">{{ gv.mon_hoc_phu_trach or '' }}</textarea>
+            </div>
+
+            <h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">3. Thông tin Liên hệ</h3>
+
+            <div style="display: flex; gap: 20px;">
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="email">Email công vụ (duy nhất):</label>
+                    <input type="email" name="email" id="email" value="{{ gv.email or '' }}" placeholder="name@ptit.edu.vn">
+                </div>
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="so_dien_thoai">Số điện thoại:</label>
+                    <input type="text" name="so_dien_thoai" id="so_dien_thoai" value="{{ gv.so_dien_thoai or '' }}">
+                </div>
+            </div>
+            <div style="display: flex; gap: 20px;">
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="van_phong">Văn phòng làm việc:</label>
+                    <input type="text" name="van_phong" id="van_phong" value="{{ gv.van_phong or '' }}" placeholder="ví dụ: P.501 nhà A1">
+                </div>
+                <div style="margin-bottom: 15px; flex: 1;">
+                    <label for="dia_chi">Địa chỉ liên lạc:</label>
+                    <input type="text" name="dia_chi" id="dia_chi" value="{{ gv.dia_chi or '' }}">
+                </div>
+            </div>
+
+            <h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">4. Thông tin hiển thị (tùy chọn)</h3>
+            <div style="margin-bottom: 20px;">
+                <label for="avatar_url">Đường dẫn ảnh đại diện:</label>
+                <input type="text" name="avatar_url" id="avatar_url" value="{{ gv.avatar_url or '' }}" placeholder="/static/images/avatar_default.png">
+                <small style="display: block; color: #666;">Ví dụ: /static/images/avatar_default.png</small>
             </div>
 
             <div>

@@ -7,343 +7,59 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-        /* === CẬP NHẬT CSS CHO CÁC NÚT CHỨC NĂNG === */
-
-        /* Style chung cho tất cả các nút (<a> và <input>) */
-        .btn, 
-        input[type="submit"], 
-        .btn-export /* Thêm các class nút khác nếu có */ {
-            display: inline-block; /* Quan trọng cho thẻ <a> */
-            padding: 8px 15px;     /* Kích thước nút */
-            background-color: var(--primary-color); /* MÀU ĐỎ */
-            color: white;          /* CHỮ TRẮNG */
-            font-weight: bold;     /* CHỮ IN ĐẬM */
-            border: none;
-            border-radius: 5px;    /* Bo góc */
-            cursor: pointer;
-            text-decoration: none; /* Bỏ gạch chân cho thẻ <a> */
-            font-size: 14px;       /* Cỡ chữ */
-            text-align: center;
-            transition: background-color 0.2s, opacity 0.2s; /* Hiệu ứng hover */
-            margin: 5px 0; /* Thêm khoảng cách nhỏ */
-        }
-
-        /* Hiệu ứng Hover nhẹ nhàng */
-        .btn:hover, 
-        input[type="submit"]:hover, 
-        .btn-export:hover {
-            opacity: 0.85; /* Giảm độ sáng nhẹ khi hover */
-        }
-
-        /* Nút phụ (ví dụ: Xóa bộ lọc) - giữ style cũ hoặc tùy chỉnh */
-        .filter-buttons a:not(.btn-export) { /* Áp dụng cho link không phải nút chính */
-            text-decoration: none;
-            color: #555; /* Màu chữ xám */
-            margin-left: 10px;
-            font-size: 14px;
-            padding: 8px 0; /* Căn chỉnh chiều cao */
-        }
-         .filter-buttons a:not(.btn-export):hover {
-            color: var(--primary-color); /* Đổi màu khi hover */
-        }
-
-        /* --- Xóa các style cũ cho từng loại nút nếu không cần --- */
-        /* Ví dụ: Bạn có thể xóa các rule cũ cho .btn-edit, .btn-delete nếu muốn tất cả đều màu đỏ */
-        /* .btn-edit { ... } */
-        /* .btn-delete { ... } */
-        /* --- Hoặc giữ lại nếu muốn nút Sửa/Xóa có màu khác --- */
-        .btn-edit { background-color: #f0ad4e; } /* Vẫn giữ màu cam cho Sửa */
-        .btn-delete { background-color: #d9534f; } /* Vẫn giữ màu đỏ đậm cho Xóa */
-        .btn-edit:hover, .btn-delete:hover { opacity: 0.85; }
-
-        /* Đảm bảo form nút Xóa không làm lệch layout */
-        td.action-buttons form {
-            display: inline-block; /* Cho form nằm cùng hàng */
-            margin: 0;
-        }
-        td.action-buttons form input[type="submit"] {
-             margin: 0; /* Xóa margin của nút submit trong form */
-        }
-
-        /* Cập nhật lại style cho input submit trong form tìm kiếm nếu cần */
-        .filter-buttons input[type="submit"] {
-             background-color: #0275d8; /* Giữ màu xanh cho Tìm kiếm/Lọc */
-        }
-         .filter-buttons input[type="submit"]:hover {
-             opacity: 0.85;
-         }
-        :root {
-            --primary-color: #b71c1c; /* Màu đỏ chủ đạo (theo yêu cầu) */
-            --light-gray: #f4f6f9;     /* Màu nền chính */
-            --border-color: #e0e0e0;   /* Màu viền */
-            --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html {
-            height: 100%;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--light-gray);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            color: #333;
-        }
-
-        /* === 1. HEADER (Thanh đỏ) === */
-        .app-header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0 25px;
-            display: flex;
-            align-items: center;
-            height: 55px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .header-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .header-logo img {
-            height: 35px; /* Đặt logo vào đây */
-        }
-        .header-logo-text {
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: white;
-            text-decoration: none;
-        }
-        .header-nav {
-            margin-left: 30px;
-            display: flex;
-            gap: 15px;
-        }
-        .header-nav a {
-            color: white;
-            text-decoration: none;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: background-color 0.2s;
-        }
-        .header-nav a:hover, .header-nav a.active {
-            background-color: rgba(0,0,0,0.15);
-        }
-
-        /* === 2. THÂN TRANG (Layout 2 cột) === */
-        .app-container {
-            display: flex;
-            flex: 1; /* Quan trọng: để đẩy footer xuống */
-            width: 100%;
-            max-width: 1400px;
-            margin: 20px auto;
-            gap: 20px;
-            padding: 0 20px;
-        }
-
-        /* === 3. NỘI DUNG CHÍNH (Bên trái) === */
-        .main-content {
-            flex: 3;
-            min-width: 0; /* Ngăn nội dung bị co lại bất thường */
-        }
-
-        /* === 4. SIDEBAR (Bên phải) === */
-        .sidebar-right {
-            flex: 1;
-            min-width: 300px; /* Đảm bảo sidebar không quá hẹp */
-        }
-
-        /* === 5. FOOTER (Thanh đỏ) === */
-        .app-footer {
-            background-color: var(--primary-color);
-            color: #eee;
-            padding: 20px;
-            text-align: center;
-            font-size: 0.9rem;
-            margin-top: auto; /* Quan trọng: để đẩy footer xuống */
-        }
-        .footer-stats {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            margin-top: 10px;
-            font-size: 0.85rem;
-            color: #f0f0f0;
-        }
-        .footer-stats span i {
-            margin-right: 5px;
-        }
-
-        /* === CÁC THÀNH PHẦN GIAO DIỆN === */
-
-        
-        /* Bảng (Table) */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            border: 1px solid var(--border-color); /* Thêm viền bao ngoài bảng */
-        }
-        .data-table th, .data-table td {
-            padding: 12px 15px;
-            border: 1px solid var(--border-color); /* <-- THÊM DÒNG NÀY ĐỂ TẠO VIỀN CHO Ô */
-            text-align: left;
-        }
-        .data-table thead th {
-            background-color: #f9f9f9; /* Header xám nhạt */
-            font-weight: 500;
-        }
-
-        /* Thẻ (Card) */
-        .card {
-            background: #fff;
-            border-radius: 8px; /* Bo góc nhẹ */
-            box-shadow: var(--card-shadow); /* Bóng đổ mềm */
-            margin-bottom: 20px;
-            overflow: hidden; /* Giữ .card-header đẹp */
-        }
-        .card-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 1.15rem;
-            font-weight: 500;
-            color: #111;
-        }
-        .card-body {
-            padding: 20px;
-        }
-
-        /* Nhóm Sidebar (Giống QLĐT) */
-        .sidebar-group {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-        .sidebar-header {
-            background-color: #f7f7f7;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--primary-color);
-            padding: 12px 15px;
-            margin: 0;
-            font-size: 0.9em;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .sidebar-content {
-            padding: 15px;
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-        .sidebar-content strong {
-            display: inline-block;
-            min-width: 80px;
-            color: #555;
-        }
-        /* Menu tính năng (Sidebar) */
-        .sidebar-nav a {
-            display: block;
-            text-decoration: none;
-            color: #333;
-            padding: 13px 15px;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 0.95rem;
-            transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .sidebar-nav a i {
-            color: #555;
-            width: 16px;
-        }
-        .sidebar-nav a:hover {
-            background-color: #f9f9f9;
-        }
-        .sidebar-nav a:last-child {
-            border-bottom: none;
-        }
-        .sidebar-nav a.logout-link {
-            color: var(--primary-color);
-            font-weight: 500;
-        }
-
-        /* Thông báo (Flash) */
-        .flash {
-            padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid;
-        }
-        .flash.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
-        .flash.danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
-
-        /* Form (Căn bản) */
-        form label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-        form input[type="text"], form input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        form input[type="submit"] {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            .app-container {
-                flex-direction: column; /* Xếp chồng 2 cột */
-            }
-            .sidebar-right {
-                min-width: 100%;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
     {% block styles %}{% endblock %}
     
 </head>
 <body>
+<div class="app-shell">
 
     <header class="app-header">
         <div class="header-logo">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+            <img src="{{ url_for('static', filename='Logo.png') }}" alt="Logo">
             <a href="{{ url_for('home') }}" class="header-logo-text">Quản lý Đào tạo</a>
         </div>
-        <nav class="header-nav">
-            <a href="{{ url_for('home') }}" class="active">
-                <i class="fa-solid fa-house"></i>
-                <span>Trang chủ</span>
-            </a>
+        <div class="header-actions">
+            <nav class="header-nav">
+                <a href="{{ url_for('home') }}" class="{% if request.endpoint == 'home' %}active{% endif %}">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Trang chủ</span>
+                </a>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.vai_tro.value == 'SINHVIEN' %}
+                        <a href="{{ url_for('student_dashboard') }}" class="{% if request.endpoint == 'student_dashboard' %}active{% endif %}">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            <span>Bảng tin SV</span>
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+                            <i class="fa-solid fa-gauge-high"></i>
+                            <span>Quản trị</span>
+                        </a>
+                    {% endif %}
+                {% endif %}
             </nav>
+
+            {% if current_user.is_authenticated %}
+                <div class="header-user">
+                    <span class="user-role">
+                        <i class="fa-solid fa-circle"></i>
+                        {{ 'Sinh viên' if current_user.vai_tro.value == 'SINHVIEN' else 'Giáo viên' }}
+                    </span>
+                    <span class="user-name">{{ current_user.username }}</span>
+                </div>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-ghost header-login">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Đăng nhập
+                </a>
+            {% endif %}
+        </div>
     </header>
 
     <div class="app-container">
@@ -413,8 +129,9 @@
 
 
                     <a href="{{ url_for('thong_bao_chung') }}"><i class="fa-solid fa-bell"></i> Thông báo chung</a>
+                    <a href="{{ url_for('admin_manage_teachers') }}"><i class="fa-solid fa-chalkboard-user"></i> Quản lý Giảng viên</a>
 
-                   
+ 
                     <a href="{{ url_for('admin_manage_students') }}"><i class="fa-solid fa-users"></i> Quản lý Sinh viên</a>
                     <a href="{{ url_for('admin_import_students') }}"><i class="fa-solid fa-file-excel"></i> Nhập Sinh viên (Excel)</a>
                     <a href="{{ url_for('admin_manage_courses') }}"><i class="fa-solid fa-book"></i> Quản lý Môn học</a>
@@ -451,5 +168,8 @@
         </div>
     </footer>
 
+    {% block scripts %}{% endblock %}
+
+</div>
 </body>
 </html>
