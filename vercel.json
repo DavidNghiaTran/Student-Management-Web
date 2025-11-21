@@ -2,12 +2,7 @@
   "version": 2,
   "functions": {
     "api/index.py": {
-      "includeFiles": [
-        "templates/**",
-        "static/**",
-        "data/**",
-        "qlsv.db"
-      ]
+      "includeFiles": "templates/**,static/**,data/**,qlsv.db"
     }
   },
   "routes": [
