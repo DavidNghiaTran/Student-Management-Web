@@ -1,5 +1,9 @@
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys, os, shutil
+# Bảo đảm thư mục gốc có trong PYTHONPATH để import module nội bộ khi deploy (Vercel/Unix)
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 from data.thongbao import notifications as ptit_notifications
 
 # -*- coding: utf-8 -*-
@@ -45,7 +49,6 @@ def convert_10_to_4_scale(diem_10):
     else:
         return 0.0  # F
 
-import os
 import enum
 import pandas as pd
 import io
@@ -62,16 +65,47 @@ from functools import wraps
 # --- 1. CẤU HÌNH ỨNG DỤNG ---
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-# === SỬA ĐƯỜNG DẪN ===
-project_root = os.path.abspath(os.path.join(basedir, '..'))
 template_dir = os.path.join(project_root, 'templates')
 static_dir = os.path.join(project_root, 'static')
 
+def resolve_database_uri():
+    """
+    Build a database URI that works locally and on Vercel.
+    - Prefer DATABASE_URL when provided (for hosted DBs).
+    - For SQLite on Vercel, copy qlsv.db into /tmp so it is writable.
+    """
+    env_db_url = os.getenv('DATABASE_URL')
+    if env_db_url:
+        if env_db_url.startswith('postgres://'):
+            env_db_url = env_db_url.replace('postgres://', 'postgresql://', 1)
+        return env_db_url
+
+    sqlite_path = os.path.join(project_root, 'qlsv.db')
+    running_on_vercel = os.getenv('VERCEL') or os.getenv('VERCEL_URL')
+    if running_on_vercel:
+        tmp_sqlite_path = os.path.join('/tmp', 'qlsv.db')
+        if not os.path.exists(tmp_sqlite_path):
+            try:
+                os.makedirs(os.path.dirname(tmp_sqlite_path), exist_ok=True)
+                if os.path.exists(sqlite_path):
+                    shutil.copy(sqlite_path, tmp_sqlite_path)
+                else:
+                    open(tmp_sqlite_path, 'a').close()
+            except OSError as exc:
+                print(f"[Database setup] Could not prepare writable SQLite copy: {exc}")
+            else:
+                sqlite_path = tmp_sqlite_path
+        else:
+            sqlite_path = tmp_sqlite_path
+
+    return 'sqlite:///' + sqlite_path
+
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.config['SECRET_KEY'] = 'mot-khoa-bi-mat-rat-manh-theo-yeu-cau-bao-mat'
-# Cấu hình đường dẫn CSDL SQLite (Đã sửa)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(project_root, 'qlsv.db')
+# Cấu hình đường dẫn CSDL tùy theo môi trường (local/VERCEL/heroku)
+app.config['SQLALCHEMY_DATABASE_URI'] = resolve_database_uri()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 # =====================
 
 db = SQLAlchemy(app)
@@ -112,6 +146,16 @@ def ensure_teacher_profile_columns():
             return
 
     db.session.commit()
+
+
+def initialize_database():
+    """Ensure tables exist on cold start (needed for serverless/Vercel)."""
+    with app.app_context():
+        db.create_all()
+        ensure_teacher_profile_columns()
+
+
+initialize_database()
 login_manager.login_message = 'Vui lòng đăng nhập để truy cập trang này.'
 login_manager.login_message_category = 'info'
 
@@ -1774,8 +1818,7 @@ def thong_bao_chung_detail(id):
 
 
 # --- 5. KHỞI CHẠY ỨNG DỤNG ---
-
-# if __name__ == '__main__':
+if __name__ == '__main__':
     with app.app_context():
         # Tạo tất cả các bảng nếu chưa tồn tại
         db.create_all()
