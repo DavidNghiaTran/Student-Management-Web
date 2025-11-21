@@ -6,6 +6,16 @@
       "use": "@vercel/python"
     }
   ],
+  "functions": {
+    "api/index.py": {
+      "includeFiles": [
+        "templates/**",
+        "static/**",
+        "data/**",
+        "qlsv.db"
+      ]
+    }
+  },
   "routes": [
     {
       "src": "/static/(.*)", 
