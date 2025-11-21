@@ -1,18 +1,12 @@
 {
-  "version": 2,
-  "functions": {
-    "api/index.py": {
-      "includeFiles": "templates/**,static/**,data/**,qlsv.db"
-    }
-  },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/static/(.*)", 
-      "dest": "/static/$1"
+      "source": "/static/(.*)",
+      "destination": "/static/$1"
     },
     {
-      "src": "/(.*)", 
-      "dest": "api/index.py" 
+      "source": "/(.*)",
+      "destination": "/api/index.py"
     }
   ]
 }
